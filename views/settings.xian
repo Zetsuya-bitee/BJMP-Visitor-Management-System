@@ -1,0 +1,70 @@
+{{> head}}
+{{> navbar}}
+
+<div class="flex flex-1">
+  {{> sidebar}}
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    {{> alerts}}
+
+    <!-- Header -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-amber-500"></i>
+          Facility Configuration &amp; System Settings
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Configure correctional facility metadata, security alert thresholds, and visitor policy rules
+        </p>
+      </div>
+
+      <div class="text-xs bg-amber-50 text-amber-900 border border-amber-200 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <i class="fa-solid fa-lock text-amber-600"></i>
+        <span>Restricted to Jail Warden / System Administrator</span>
+      </div>
+    </div>
+
+    <!-- Settings Form -->
+    <div class="max-w-4xl bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      
+      <form action="/settings" method="POST" class="space-y-6">
+        
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800">
+            1. Correctional Facility Identification
+          </h3>
+          <p class="text-[11px] text-slate-500">Appears on official visitor passes, muster records, and certified export reports</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {{#each facilitySettings}}
+          <div class="{{#if (eq this.setting_key 'visiting_areas')}}md:col-span-2{{/if}}">
+            <label for="{{ this.setting_key }}" class="block text-xs font-bold text-slate-700 uppercase mb-1">
+              {{ this.description }}
+            </label>
+            <input type="text" id="{{ this.setting_key }}" name="{{ this.setting_key }}" value="{{ this.setting_value }}" required
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium text-slate-900">
+            <span class="text-[10px] text-slate-400 font-mono">Key: {{ this.setting_key }} &bull; Category: {{ this.category }}</span>
+          </div>
+          {{/each}}
+        </div>
+
+        <div class="pt-4 border-t border-slate-200 flex items-center justify-end space-x-3">
+          <a href="/dashboard" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50">
+            Cancel
+          </a>
+          <button type="submit" class="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Save System Configurations</span>
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
+  </main>
+</div>
+
+{{> footer}}

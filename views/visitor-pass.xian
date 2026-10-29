@@ -1,0 +1,157 @@
+{{> head}}
+
+<!-- Top Action Bar for Screen View -->
+<div class="bg-slate-900 border-b border-slate-800 text-white p-3 no-print flex items-center justify-between shadow-md">
+  <div class="flex items-center gap-3">
+    <a href="/logbook" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700">
+      <i class="fa-solid fa-arrow-left mr-1"></i> Back to Logbook
+    </a>
+    <span class="text-xs text-slate-300 font-mono">Reference: <strong>{{ visit.reference_no }}</strong></span>
+  </div>
+  <div class="flex items-center gap-2">
+    <button onclick="window.print()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5">
+      <i class="fa-solid fa-print"></i>
+      <span>Print Official Pass</span>
+    </button>
+  </div>
+</div>
+
+<div class="p-6 flex justify-center items-center flex-1 bg-slate-100">
+  
+  <!-- Printable Pass Container (Standard Badge Dimensions) -->
+  <div class="w-full max-w-lg bg-white border-2 border-slate-900 rounded-2xl shadow-xl overflow-hidden p-6 relative">
+    
+    <!-- Watermark Badge -->
+    <div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+      <i class="fa-solid fa-shield-halved text-[280px]"></i>
+    </div>
+
+    <!-- Official BJMP Pass Header -->
+    <div class="text-center border-b-2 border-slate-900 pb-4 mb-4">
+      <div class="text-[10px] tracking-widest uppercase font-semibold text-slate-500">
+        Republic of the Philippines &bull; DILG
+      </div>
+      <div class="text-base font-black tracking-tight text-slate-950 uppercase sm:text-lg">
+        BUREAU OF JAIL MANAGEMENT AND PENOLOGY
+      </div>
+      <div class="text-xs font-bold text-sky-800 tracking-wide">
+        {{ facilityName }}
+      </div>
+      <div class="inline-block mt-2 px-3 py-1 bg-slate-900 text-white text-xs font-black tracking-widest uppercase rounded">
+        OFFICIAL VISITOR GATE PASS
+      </div>
+    </div>
+
+    <!-- Reference Number & Barcode Area -->
+    <div class="flex items-center justify-between bg-slate-50 border border-slate-300 rounded-lg p-3 mb-4">
+      <div>
+        <div class="text-[9px] uppercase font-bold text-slate-500">Visit Reference Number</div>
+        <div class="text-base font-black font-mono text-slate-950">{{ visit.reference_no }}</div>
+        <div class="text-[10px] text-slate-500">Date: <span class="font-bold text-slate-800">{{ visit.visit_date }}</span></div>
+      </div>
+      <!-- Simulated Barcode Visual -->
+      <div class="text-right">
+        <div class="tracking-widest font-mono text-xl font-black text-slate-800 select-none">||||| | |||| ||| ||</div>
+        <div class="text-[9px] font-mono text-slate-500">{{ visit.visitor.visitor_code }}</div>
+      </div>
+    </div>
+
+    <!-- Visitor & Inmate Grid -->
+    <div class="grid grid-cols-2 gap-4 text-xs mb-4">
+      
+      <!-- Visitor Side -->
+      <div class="bg-sky-50/50 border border-sky-200 rounded-lg p-3">
+        <div class="text-[9px] uppercase font-bold text-sky-800 mb-1 flex items-center gap-1">
+          <i class="fa-solid fa-user"></i> Visitor Profile
+        </div>
+        <div class="text-sm font-black text-slate-900">{{ visit.visitor.full_name }}</div>
+        <div class="text-[11px] text-slate-600 mt-1">
+          <span class="font-semibold">{{ visit.visitor.id_type }}:</span> {{ visit.visitor.id_number }}
+        </div>
+        <div class="text-[11px] text-slate-600 mt-0.5">
+          <span class="font-semibold">Relationship:</span> {{ visit.relationship }}
+        </div>
+        {{#if visit.visitor.contact_number}}
+        <div class="text-[10px] text-slate-500 mt-0.5">
+          <span class="font-semibold">Contact:</span> {{ visit.visitor.contact_number }}
+        </div>
+        {{/if}}
+      </div>
+
+      <!-- Inmate Side -->
+      <div class="bg-indigo-50/50 border border-indigo-200 rounded-lg p-3">
+        <div class="text-[9px] uppercase font-bold text-indigo-800 mb-1 flex items-center gap-1">
+          <i class="fa-solid fa-person-shelter"></i> Inmate in Custody
+        </div>
+        <div class="text-sm font-black text-slate-900">
+          {{ visit.inmate.last_name }}, {{ visit.inmate.first_name }}
+        </div>
+        <div class="text-[11px] font-mono font-bold text-slate-700 mt-1">
+          ID: {{ visit.inmate.inmate_number }}
+        </div>
+        <div class="text-[11px] text-slate-600 mt-0.5">
+          <span class="font-semibold">Cell:</span> {{#if visit.inmate.cell}}{{ visit.inmate.cell.cell_number }} ({{ visit.inmate.cell.block }}){{else}}Unassigned{{/if}}
+        </div>
+        <div class="text-[10px] text-slate-500 mt-0.5">
+          <span class="font-semibold">Security:</span> {{ visit.inmate.security_level }}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Visit Parameters & Logistics -->
+    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs mb-4 grid grid-cols-3 gap-2 text-center">
+      <div>
+        <div class="text-[9px] uppercase font-semibold text-slate-500">Time of Entry</div>
+        <div class="font-bold text-slate-900 text-sm mt-0.5">{{ visit.time_in }}</div>
+      </div>
+      <div>
+        <div class="text-[9px] uppercase font-semibold text-slate-500">Max Duration</div>
+        <div class="font-bold text-emerald-700 text-sm mt-0.5">{{ maxDuration }} Mins</div>
+      </div>
+      <div>
+        <div class="text-[9px] uppercase font-semibold text-slate-500">Assigned Area</div>
+        <div class="font-bold text-slate-900 text-xs mt-0.5 truncate">{{ visit.visiting_area }}</div>
+      </div>
+    </div>
+
+    <!-- Facility Rules & Regulations -->
+    <div class="border border-slate-300 rounded-lg p-2.5 text-[10px] text-slate-600 mb-4 bg-white">
+      <div class="font-bold uppercase text-slate-800 text-[10px] mb-1 flex items-center gap-1 text-red-600">
+        <i class="fa-solid fa-triangle-exclamation"></i> Security Rules &amp; Penalties
+      </div>
+      <ul class="list-disc list-inside space-y-0.5">
+        <li>Visitors must wear pass visibly at all times within the facility.</li>
+        <li>Cellphones, cameras, weapons, illegal drugs, and contraband strictly prohibited.</li>
+        <li>Violation of visiting rules results in immediate ban and criminal prosecution.</li>
+        <li>Pass must be surrendered to the Gate Officer upon departure.</li>
+      </ul>
+    </div>
+
+    <!-- Signatory Block -->
+    <div class="pt-2 border-t-2 border-slate-900 grid grid-cols-2 gap-6 text-center text-xs">
+      <div>
+        <div class="h-10 flex items-end justify-center font-serif italic text-slate-600">
+          {{ visit.visitor.full_name }}
+        </div>
+        <div class="border-t border-slate-400 pt-1 text-[10px] font-semibold text-slate-700">
+          Visitor Signature
+        </div>
+      </div>
+
+      <div>
+        <div class="h-10 flex items-end justify-center font-bold text-slate-900 text-xs">
+          {{#if visit.checkInOfficer}}{{ visit.checkInOfficer.name }}{{else}}Authorized Gate Officer{{/if}}
+        </div>
+        <div class="border-t border-slate-400 pt-1 text-[10px] font-semibold text-slate-700">
+          Processing Gate Officer
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{{> footer}}
+

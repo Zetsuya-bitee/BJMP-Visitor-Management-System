@@ -1,0 +1,118 @@
+{{> head}}
+
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-bjmp-navy flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    
+    <!-- BJMP Official Header -->
+    <div class="text-center">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-tr from-amber-600 to-amber-400 text-slate-950 text-3xl shadow-xl ring-4 ring-amber-500/30 mb-4">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h2 class="text-2xl font-black tracking-tight text-white uppercase sm:text-3xl">
+        BUREAU OF JAIL MANAGEMENT AND PENOLOGY
+      </h2>
+      <p class="mt-2 text-sm text-sky-300 font-semibold tracking-wide uppercase">
+        Custodial &amp; Gate Officer Department
+      </p>
+      <p class="text-xs text-slate-400 mt-1">
+        Visitor Management &amp; Inmate Custodial Control System
+      </p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div class="bg-slate-900/90 backdrop-blur border border-slate-700 py-8 px-4 shadow-2xl rounded-2xl sm:px-10">
+        
+        <!-- Flash Alerts -->
+        {{#if error_msg}}
+        <div class="mb-5 bg-red-950/80 border border-red-500/50 text-red-200 text-xs p-3.5 rounded-lg flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-red-400 text-sm"></i>
+          <span>{{ error_msg }}</span>
+        </div>
+        {{/if}}
+
+        {{#if success_msg}}
+        <div class="mb-5 bg-emerald-950/80 border border-emerald-500/50 text-emerald-200 text-xs p-3.5 rounded-lg flex items-center gap-2">
+          <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+          <span>{{ success_msg }}</span>
+        </div>
+        {{/if}}
+
+        <form class="space-y-5" action="/login" method="POST">
+          <div>
+            <label for="usernameOrEmail" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              Officer Username or Registered Email
+            </label>
+            <div class="mt-1.5 relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-user-shield text-sm"></i>
+              </div>
+              <input id="usernameOrEmail" name="usernameOrEmail" type="text" autocomplete="username" required
+                placeholder="e.g. gateofficer or admin"
+                class="block w-full pl-10 pr-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-sm">
+            </div>
+          </div>
+
+          <div>
+            <label for="password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              Official Password
+            </label>
+            <div class="mt-1.5 relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <i class="fa-solid fa-lock text-sm"></i>
+              </div>
+              <input id="password" name="password" type="password" autocomplete="current-password" required
+                placeholder="••••••••••••"
+                class="block w-full pl-10 pr-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent text-sm">
+            </div>
+          </div>
+
+          <div>
+            <button type="submit"
+              class="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-all duration-150">
+              <i class="fa-solid fa-right-to-bracket mr-2"></i>
+              Sign In to Gate Terminal
+            </button>
+          </div>
+        </form>
+
+        <!-- Pre-configured Credentials Quick-Fill helper for convenience -->
+        <div class="mt-6 pt-5 border-t border-slate-800">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">
+            Authorized Account Presets (Click to autofill)
+          </p>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="fillCreds('gateofficer', 'GateOfficer123!')" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-left transition-colors">
+              <div class="text-[11px] font-semibold text-emerald-400">Gate Officer</div>
+              <div class="text-[9px] text-slate-400 font-mono">gateofficer</div>
+            </button>
+            <button type="button" onclick="fillCreds('supervisor', 'Supervisor123!')" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-left transition-colors">
+              <div class="text-[11px] font-semibold text-amber-400">Supervisor</div>
+              <div class="text-[9px] text-slate-400 font-mono">supervisor</div>
+            </button>
+            <button type="button" onclick="fillCreds('admin', 'AdminPassword123!')" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-left transition-colors">
+              <div class="text-[11px] font-semibold text-sky-400">Warden/Admin</div>
+              <div class="text-[9px] text-slate-400 font-mono">admin</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="mt-5 bg-slate-950/60 p-3 rounded-lg border border-slate-800 text-[10px] text-slate-400 text-center">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1"></i>
+          RESTRICTED GOVERNMENT TERMINAL: Unauthorized access is punishable under Philippine Law (RA 10175). All transactions and IP addresses are actively monitored.
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function fillCreds(u, p) {
+    document.getElementById('usernameOrEmail').value = u;
+    document.getElementById('password').value = p;
+  }
+</script>
+
+{{> footer}}

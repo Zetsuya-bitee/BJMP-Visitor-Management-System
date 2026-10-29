@@ -1,0 +1,116 @@
+<!-- Desktop & Tablet Sidebar -->
+<aside id="app-sidebar" class="w-64 bg-slate-900 border-r border-slate-800 text-slate-300 flex-shrink-0 flex flex-col justify-between hidden lg:flex shadow-xl z-30">
+  <div class="py-4 flex flex-col h-full overflow-y-auto">
+    
+    <!-- Navigation Section -->
+    <div class="px-4 mb-3">
+      <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2">Main Operations</p>
+    </div>
+
+    <nav class="space-y-1 px-3">
+      <!-- 1. Dashboard -->
+      <a href="/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'Custodial Command Dashboard')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-gauge-high w-5 text-center text-sky-400"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <!-- 2. Visitor Registration -->
+      <a href="/visitors/register" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'Visitor Registration & Processing')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-id-badge w-5 text-center text-emerald-400"></i>
+        <span>Visitor Registration</span>
+      </a>
+
+      <!-- 3. Visitor Logbook -->
+      <a href="/logbook" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'Digital Visitor Logbook')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-book-journal-whills w-5 text-center text-amber-400"></i>
+        <span>Visitor Logbook</span>
+      </a>
+
+      <!-- 4. Inmate Cell Assignments -->
+      <a href="/cells" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'Inmate Cell Assignment Monitoring')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-dungeon w-5 text-center text-indigo-400"></i>
+        <span>Cell Assignments</span>
+      </a>
+
+      <!-- 5. Daily Attendance & Headcount -->
+      <a href="/headcount" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'Daily Attendance & Physical Headcount')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-clipboard-check w-5 text-center text-teal-400"></i>
+        <span>Daily Headcount</span>
+      </a>
+
+      <!-- 6. Reports & Record Exports -->
+      <a href="/reports" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'Reports & Record Exports')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-file-invoice text-center w-5 text-cyan-400"></i>
+        <span>Reports & Exports</span>
+      </a>
+    </nav>
+
+    <!-- Administrative Modules (Role Guarded) -->
+    {{#if isSupervisor}}
+    <div class="px-4 mt-6 mb-2">
+      <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2">Supervisory & Audit</p>
+    </div>
+
+    <nav class="space-y-1 px-3">
+      <!-- 7. Audit Logs -->
+      <a href="/audit-logs" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'System Security & Audit Trail Logs')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-list-check w-5 text-center text-purple-400"></i>
+        <span>Security Audit Logs</span>
+      </a>
+    </nav>
+    {{/if}}
+
+    {{#if isAdmin}}
+    <div class="px-4 mt-6 mb-2">
+      <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2">Administration</p>
+    </div>
+
+    <nav class="space-y-1 px-3">
+      <!-- 8. User Management -->
+      <a href="/users" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'User Management - BJMP Custodial System')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-users-gear w-5 text-center text-rose-400"></i>
+        <span>User Accounts</span>
+      </a>
+
+      <!-- 9. System Settings -->
+      <a href="/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white {{#if (eq title 'Facility Configuration & System Settings')}}bg-sky-900 text-sky-200 border-l-4 border-sky-500 font-semibold{{/if}}">
+        <i class="fa-solid fa-sliders w-5 text-center text-amber-500"></i>
+        <span>System Settings</span>
+      </a>
+    </nav>
+    {{/if}}
+
+    <!-- Footer System Status -->
+    <div class="mt-auto px-4 pt-6 pb-2">
+      <div class="bg-slate-800/60 rounded-lg p-3 border border-slate-700/60 text-xs">
+        <div class="flex items-center justify-between text-slate-400 mb-1">
+          <span>Security Status:</span>
+          <span class="text-emerald-400 font-semibold flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Normal
+          </span>
+        </div>
+        <div class="text-[11px] text-slate-400">
+          Operational Shift: <span class="text-slate-200 font-medium">Shift 1 / Gate Alpha</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</aside>
+
+<!-- Mobile Slide-over Menu Script -->
+<script>
+  const mobileBtn = document.getElementById('mobile-menu-btn');
+  const sidebar = document.getElementById('app-sidebar');
+  if (mobileBtn && sidebar) {
+    mobileBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('hidden');
+      sidebar.classList.toggle('fixed');
+      sidebar.classList.toggle('inset-y-0');
+      sidebar.classList.toggle('left-0');
+      sidebar.classList.toggle('top-16');
+      sidebar.classList.toggle('z-50');
+    });
+  }
+</script>
+

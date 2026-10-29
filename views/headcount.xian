@@ -1,0 +1,422 @@
+{{> head}}
+{{> navbar}}
+
+<div class="flex flex-1">
+  {{> sidebar}}
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    {{> alerts}}
+
+    <!-- Top Action Bar -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-teal-600"></i>
+          Daily Attendance &amp; Physical Headcount
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Shift muster verification &bull; Inmate physical roll-call and discrepancy acknowledgement
+        </p>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <form method="GET" action="/headcount" class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-300 shadow-sm">
+          <label for="date" class="text-xs font-semibold text-slate-600 flex items-center gap-1">
+            <i class="fa-regular fa-calendar"></i> Headcount Date:
+          </label>
+          <input type="date" id="date" name="date" value="{{ selectedDate }}" onchange="this.form.submit()"
+            class="text-xs text-slate-800 font-medium focus:outline-none bg-transparent">
+        </form>
+
+        <a href="/headcount/export/csv?from_date={{ selectedDate }}&to_date={{ selectedDate }}"
+          class="inline-flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors">
+          <i class="fa-solid fa-file-csv text-emerald-400"></i>
+          <span>Export CSV</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Official Custody Baseline Card -->
+    <div class="bg-gradient-to-r from-teal-900 via-slate-900 to-bjmp-navy rounded-xl p-5 mb-6 text-white shadow-md border border-teal-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-400/30 flex items-center justify-center text-2xl font-black">
+          <i class="fa-solid fa-users-viewfinder"></i>
+        </div>
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-teal-300">
+            Approved Facility Source of Truth
+          </div>
+          <div class="text-xl font-black text-white">
+            Current Active Inmate Population: <span class="text-amber-400">{{ activeInmateCount }}</span> Inmates
+          </div>
+          <p class="text-xs text-slate-300 mt-0.5">
+            Baseline expected count for all shifts on {{ selectedDate }}. Discrepancies require supervisory sign-off.
+          </p>
+        </div>
+      </div>
+      <div class="text-center sm:text-right">
+        <span class="inline-block px-3 py-1 bg-teal-800/80 text-teal-200 border border-teal-600 text-xs font-semibold rounded-full">
+          Date: {{ selectedDate }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Shifts Grid (Morning, Afternoon, Night) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {{#each headcounts}}
+      <div class="bg-white rounded-xl border {{#if (eq this.status 'Discrepancy')}}border-red-400 ring-2 ring-red-400/30{{else if (eq this.status 'Matched')}}border-emerald-300{{else}}border-slate-200{{/if}} shadow-sm p-5 flex flex-col justify-between">
+        
+        <div>
+          <!-- Shift Header & Status Badge -->
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-900">{{ this.shift }}</span>
+            </div>
+            <div>
+              {{statusBadge this.status}}
+            </div>
+          </div>
+
+          <!-- Count Comparison -->
+          <div class="grid grid-cols-2 gap-3 mb-4 text-center">
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div class="text-[10px] uppercase font-bold text-slate-500">Expected Count</div>
+              <div class="text-2xl font-black text-slate-900 mt-1">{{ this.expected_count }}</div>
+              <div class="text-[10px] text-slate-400">Custody Roll</div>
+            </div>
+
+            <div class="p-3 rounded-lg border {{#if (eq this.status 'Discrepancy')}}bg-red-50 border-red-300 text-red-900{{else if (eq this.status 'Matched')}}bg-emerald-50 border-emerald-300 text-emerald-900{{else}}bg-slate-50 border-slate-200 text-slate-900{{/if}}">
+              <div class="text-[10px] uppercase font-bold {{#if (eq this.status 'Discrepancy')}}text-red-700{{else}}text-slate-500{{/if}}">
+                Verified Count
+              </div>
+              <div class="text-2xl font-black mt-1">
+                {{#if (neq this.verified_count null)}}{{ this.verified_count }}{{else}}—{{/if}}
+              </div>
+              <div class="text-[10px] {{#if (eq this.status 'Discrepancy')}}text-red-600 font-bold{{else}}text-slate-400{{/if}}">
+                {{#if (neq this.verified_count null)}}
+                  Diff: {{#if (gt this.difference 0)}}+{{this.difference}}{{else}}{{this.difference}}{{/if}}
+                {{else}}
+                  Awaiting count
+                {{/if}}
+              </div>
+            </div>
+          </div>
+
+          <!-- Verification Information -->
+          <div class="text-xs space-y-1.5 text-slate-600 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Conducting Officer:</span>
+              <span class="font-bold text-slate-800">{{#if this.conductingOfficer}}{{ this.conductingOfficer.name }}{{else}}Pending Submission{{/if}}</span>
+            </div>
+            {{#if this.verified_at}}
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Timestamp:</span>
+              <span class="font-medium text-slate-700">{{formatDateTime this.verified_at}}</span>
+            </div>
+            {{/if}}
+            {{#if this.remarks}}
+            <div class="pt-1 border-t border-slate-200 text-[11px]">
+              <span class="font-semibold text-slate-700">Remarks:</span> {{ this.remarks }}
+            </div>
+            {{/if}}
+            {{#if this.supervisor_notes}}
+            <div class="pt-1 border-t border-slate-200 text-[11px] text-purple-900">
+              <span class="font-bold">Supervisor Review:</span> {{ this.supervisor_notes }}
+              <div class="text-[10px] text-purple-700 mt-0.5">By {{ this.reviewedBy.name }}</div>
+            </div>
+            {{/if}}
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+          
+          <!-- Explicit Submission Modal Button -->
+          <button type="button" onclick="openSubmitModal('{{ this.id }}', '{{ this.shift }}', '{{ this.expected_count }}', '{{ this.date }}')"
+            class="w-full px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors text-center">
+            <i class="fa-solid fa-clipboard-check mr-1"></i>
+            {{#if (eq this.status 'Pending')}}Submit Physical Count{{else}}Update Count Record{{/if}}
+          </button>
+
+          <!-- Supervisor Review Button (Visible if Discrepancy & user is Supervisor/Admin) -->
+          {{#if (eq this.status 'Discrepancy')}}
+            {{#if ../isSupervisor}}
+            <button type="button" onclick="openReviewModal('{{ this.id }}', '{{ this.shift }}', '{{ this.date }}', '{{ this.difference }}')"
+              class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow-sm whitespace-nowrap" title="Acknowledge Discrepancy">
+              <i class="fa-solid fa-user-check mr-1"></i> Review
+            </button>
+            {{/if}}
+          {{/if}}
+
+        </div>
+
+      </div>
+      {{/each}}
+    </div>
+
+    <!-- Historical Headcount Records Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-500">
+        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-slate-500"></i>
+          Recent Headcount Muster Log &amp; Discrepancy Audit
+        </h3>
+        <span>Recent 15 Shift Records</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider font-semibold">
+            <tr>
+              <th scope="col" class="py-3 px-4">Date</th>
+              <th scope="col" class="py-3 px-4">Shift</th>
+              <th scope="col" class="py-3 px-4">Expected</th>
+              <th scope="col" class="py-3 px-4">Verified</th>
+              <th scope="col" class="py-3 px-4">Difference</th>
+              <th scope="col" class="py-3 px-4">Status</th>
+              <th scope="col" class="py-3 px-4">Conducting Officer</th>
+              <th scope="col" class="py-3 px-4">Supervisor Review</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-700">
+            {{#if recentRecords.length}}
+              {{#each recentRecords}}
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
+                  {{ this.date }}
+                </td>
+                <td class="py-3 px-4 font-medium text-slate-800">
+                  {{ this.shift }}
+                </td>
+                <td class="py-3 px-4 font-bold text-slate-700">
+                  {{ this.expected_count }}
+                </td>
+                <td class="py-3 px-4 font-bold">
+                  {{#if (neq this.verified_count null)}}{{ this.verified_count }}{{else}}—{{/if}}
+                </td>
+                <td class="py-3 px-4 font-mono font-bold">
+                  {{#if (neq this.difference 0)}}
+                    <span class="text-red-600">{{#if (gt this.difference 0)}}+{{this.difference}}{{else}}{{this.difference}}{{/if}}</span>
+                  {{else}}
+                    <span class="text-emerald-600">0</span>
+                  {{/if}}
+                </td>
+                <td class="py-3 px-4">
+                  {{statusBadge this.status}}
+                </td>
+                <td class="py-3 px-4">
+                  <div class="font-medium text-slate-800">{{#if this.conductingOfficer}}{{ this.conductingOfficer.name }}{{else}}Pending{{/if}}</div>
+                  {{#if this.remarks}}
+                  <div class="text-[10px] text-slate-400 truncate max-w-xs" title="{{ this.remarks }}">{{ this.remarks }}</div>
+                  {{/if}}
+                </td>
+                <td class="py-3 px-4">
+                  {{#if this.reviewedBy}}
+                    <div class="font-bold text-purple-900">{{ this.reviewedBy.name }}</div>
+                    <div class="text-[10px] text-purple-700 truncate max-w-xs" title="{{ this.supervisor_notes }}">{{ this.supervisor_notes }}</div>
+                  {{else}}
+                    <span class="text-slate-400 italic">None</span>
+                  {{/if}}
+                </td>
+              </tr>
+              {{/each}}
+            {{else}}
+              <tr>
+                <td colspan="8" class="py-8 text-center text-slate-400 text-xs">
+                  No previous headcount logs found.
+                </td>
+              </tr>
+            {{/if}}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- 1. Submit Headcount Modal (Explicit Verification) -->
+<div id="submit-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+    <div class="bg-teal-700 text-white p-4 flex items-center justify-between">
+      <h3 class="text-sm font-bold flex items-center gap-2">
+        <i class="fa-solid fa-clipboard-check"></i>
+        Submit Physical Headcount Roll
+      </h3>
+      <button onclick="closeSubmitModal()" class="text-teal-200 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form action="/headcount/submit" method="POST" onsubmit="return validateHeadcountSubmit()">
+      <input type="hidden" id="modal-headcount-id" name="headcount_id">
+      <input type="hidden" id="modal-headcount-date" name="date">
+
+      <div class="p-5 text-xs space-y-3">
+        <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+          <div class="text-[10px] uppercase font-bold text-teal-800">Shift &amp; Official Expected Inmate Roll</div>
+          <div id="modal-shift-name" class="font-bold text-slate-900 text-sm mt-0.5"></div>
+          <div class="text-[11px] text-slate-600 mt-0.5">
+            Expected Count from Custody Register: <strong id="modal-expected-count" class="text-slate-900"></strong>
+          </div>
+        </div>
+
+        <div>
+          <label for="verified_count" class="block font-bold text-slate-700 mb-1">
+            Physical Verified Count Submitted by Officer <span class="text-red-500">* Mandatory</span>
+          </label>
+          <input type="number" id="verified_count" name="verified_count" min="0" required
+            placeholder="Enter actual physical count..." oninput="checkCountDiff()"
+            class="w-full text-sm font-bold px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900">
+        </div>
+
+        <!-- Discrepancy Alert in Modal -->
+        <div id="modal-discrepancy-warning" class="hidden bg-red-50 border border-red-300 rounded-lg p-3 text-red-900">
+          <div class="font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+            <span>COUNT DISCREPANCY DETECTED</span>
+          </div>
+          <p class="text-[11px] text-red-700 mt-1">
+            The count you entered does not match the expected roll (<span id="diff-span" class="font-bold"></span>).
+            An official explanation remark is MANDATORY!
+          </p>
+        </div>
+
+        <div>
+          <label for="headcount_remarks" class="block font-bold text-slate-700 mb-1">
+            Officer Remarks / Discrepancy Explanation
+          </label>
+          <textarea id="headcount_remarks" name="remarks" rows="2"
+            placeholder="e.g. All inmates present in designated cells during count; or explain court appearance / hospital transit."
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"></textarea>
+        </div>
+
+        <div class="text-[10px] text-slate-400 italic">
+          Important: Headcount is certified under official officer signature upon submission.
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
+        <button type="button" onclick="closeSubmitModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">
+          Cancel
+        </button>
+        <button type="submit" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold shadow-sm">
+          Certify &amp; Submit Count
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 2. Supervisor Review Modal (Discrepancy Review) -->
+<div id="review-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+    <div class="bg-purple-700 text-white p-4 flex items-center justify-between">
+      <h3 class="text-sm font-bold flex items-center gap-2">
+        <i class="fa-solid fa-user-check"></i>
+        Supervisor Discrepancy Review &amp; Acknowledgment
+      </h3>
+      <button onclick="closeReviewModal()" class="text-purple-200 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form action="/headcount/review" method="POST">
+      <input type="hidden" id="modal-review-id" name="headcount_id">
+      <input type="hidden" id="modal-review-date" name="date">
+
+      <div class="p-5 text-xs space-y-3">
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-purple-900">
+          <div class="text-[10px] uppercase font-bold text-purple-800">Shift Muster Under Review</div>
+          <div id="modal-review-shift" class="font-bold text-sm mt-0.5"></div>
+          <div class="text-[11px] mt-0.5">
+            Reported Discrepancy: <strong id="modal-review-diff" class="text-red-600"></strong>
+          </div>
+        </div>
+
+        <div>
+          <label for="supervisor_notes" class="block font-bold text-slate-700 mb-1">
+            Supervisor Official Findings &amp; Acknowledgment Notes <span class="text-red-500">* Mandatory</span>
+          </label>
+          <textarea id="supervisor_notes" name="supervisor_notes" rows="3" required
+            placeholder="e.g. Discrepancy investigated; 1 inmate confirmed at Provincial Hospital on authorized emergency referral. Count officially certified."
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
+        <button type="button" onclick="closeReviewModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">
+          Cancel
+        </button>
+        <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow-sm">
+          Acknowledge &amp; Certify
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let expectedCountGlobal = 0;
+
+  function openSubmitModal(id, shift, expected, date) {
+    expectedCountGlobal = parseInt(expected, 10);
+    document.getElementById('modal-headcount-id').value = id;
+    document.getElementById('modal-headcount-date').value = date;
+    document.getElementById('modal-shift-name').textContent = shift;
+    document.getElementById('modal-expected-count').textContent = expected + ' Inmates';
+    document.getElementById('verified_count').value = '';
+    document.getElementById('headcount_remarks').value = '';
+    document.getElementById('modal-discrepancy-warning').classList.add('hidden');
+    document.getElementById('submit-modal').classList.remove('hidden');
+  }
+
+  function closeSubmitModal() {
+    document.getElementById('submit-modal').classList.add('hidden');
+  }
+
+  function checkCountDiff() {
+    const entered = parseInt(document.getElementById('verified_count').value, 10);
+    const warning = document.getElementById('modal-discrepancy-warning');
+    const diffSpan = document.getElementById('diff-span');
+
+    if (!isNaN(entered) && entered !== expectedCountGlobal) {
+      const diff = entered - expectedCountGlobal;
+      diffSpan.textContent = diff > 0 ? `+${diff}` : diff;
+      warning.classList.remove('hidden');
+    } else {
+      warning.classList.add('hidden');
+    }
+  }
+
+  function validateHeadcountSubmit() {
+    const entered = parseInt(document.getElementById('verified_count').value, 10);
+    const remarks = document.getElementById('headcount_remarks').value.trim();
+
+    if (!isNaN(entered) && entered !== expectedCountGlobal && remarks.length === 0) {
+      alert('Mandatory Security Rule: An explanation remark is required when a headcount discrepancy occurs.');
+      document.getElementById('headcount_remarks').focus();
+      return false;
+    }
+    return confirm('Confirm submission of verified physical headcount?');
+  }
+
+  function openReviewModal(id, shift, date, diff) {
+    document.getElementById('modal-review-id').value = id;
+    document.getElementById('modal-review-date').value = date;
+    document.getElementById('modal-review-shift').textContent = `${shift} (${date})`;
+    document.getElementById('modal-review-diff').textContent = (diff > 0 ? `+${diff}` : diff) + ' Inmate(s)';
+    document.getElementById('supervisor_notes').value = '';
+    document.getElementById('review-modal').classList.remove('hidden');
+  }
+
+  function closeReviewModal() {
+    document.getElementById('review-modal').classList.add('hidden');
+  }
+</script>
+
+{{> footer}}
+

@@ -1,0 +1,149 @@
+{{> head}}
+{{> navbar}}
+
+<div class="flex flex-1">
+  {{> sidebar}}
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    {{> alerts}}
+
+    <!-- Top Action Bar -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="fa-solid fa-list-check text-purple-600"></i>
+          System Security &amp; Audit Trail Logs
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Immutable forensic audit logs &bull; Tracks all officer logins, visitor entries, record corrections, cell transfers, and headcounts
+        </p>
+      </div>
+
+      <div class="text-xs bg-purple-50 text-purple-900 border border-purple-200 px-3 py-1.5 rounded-lg flex items-center gap-2">
+        <i class="fa-solid fa-shield-halved text-purple-600"></i>
+        <span>Supervisor &amp; Administration Clearance Level</span>
+      </div>
+    </div>
+
+    <!-- Filters Box -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+      <form method="GET" action="/audit-logs" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        
+        <!-- Keyword Search -->
+        <div>
+          <label for="search" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+            Search Keyword / IP / ID
+          </label>
+          <input type="text" id="search" name="search" value="{{ filters.search }}" placeholder="Search details..."
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+        </div>
+
+        <!-- Action Filter -->
+        <div>
+          <label for="action" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Action Type</label>
+          <select id="action" name="action" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option value="ALL">All Actions</option>
+            {{#each distinctActions}}
+            <option value="{{ this }}" {{#if (eq ../filters.action this)}}selected{{/if}}>{{ this }}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <!-- Username Filter -->
+        <div>
+          <label for="username" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Officer Username</label>
+          <input type="text" id="username" name="username" value="{{ filters.username }}" placeholder="e.g. gateofficer"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+        </div>
+
+        <!-- From Date -->
+        <div>
+          <label for="from_date" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">From Date</label>
+          <input type="date" id="from_date" name="from_date" value="{{ filters.from_date }}"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex items-end space-x-2">
+          <button type="submit" class="w-full px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold shadow-sm">
+            Filter Logs
+          </button>
+          <a href="/audit-logs" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50">
+            Reset
+          </a>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      
+      <div class="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-500">
+        <span>Showing <strong class="text-slate-800">{{ logs.length }}</strong> of <strong class="text-slate-800">{{ totalRecords }}</strong> Audit Events</span>
+        <span>Page <strong class="text-slate-800">{{ currentPage }}</strong> of <strong class="text-slate-800">{{ totalPages }}</strong></span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider font-semibold">
+            <tr>
+              <th scope="col" class="py-3 px-4">Timestamp</th>
+              <th scope="col" class="py-3 px-4">Officer User</th>
+              <th scope="col" class="py-3 px-4">Action Event</th>
+              <th scope="col" class="py-3 px-4">Target Entity</th>
+              <th scope="col" class="py-3 px-4">Entity ID</th>
+              <th scope="col" class="py-3 px-4">IP Address</th>
+              <th scope="col" class="py-3 px-4">Forensic Activity Details</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-700 font-mono text-[11px]">
+            {{#if logs.length}}
+              {{#each logs}}
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-4 whitespace-nowrap text-slate-500 font-sans">
+                  {{formatDateTime this.created_at}}
+                </td>
+                <td class="py-3 px-4 whitespace-nowrap font-bold text-slate-900 font-sans">
+                  {{ this.username }}
+                  {{#if this.user}}
+                  <span class="block text-[10px] text-slate-400 font-normal">{{ this.user.role }}</span>
+                  {{/if}}
+                </td>
+                <td class="py-3 px-4 whitespace-nowrap font-sans">
+                  <span class="inline-block px-2 py-0.5 rounded font-bold text-[10px] bg-slate-100 text-slate-800 border border-slate-300">
+                    {{ this.action }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 whitespace-nowrap text-slate-600 font-sans font-semibold">
+                  {{ this.entity }}
+                </td>
+                <td class="py-3 px-4 whitespace-nowrap text-slate-900 font-bold">
+                  {{ this.entity_id }}
+                </td>
+                <td class="py-3 px-4 whitespace-nowrap text-slate-500">
+                  {{ this.ip_address }}
+                </td>
+                <td class="py-3 px-4 text-slate-800 font-sans max-w-lg break-words">
+                  {{ this.details }}
+                </td>
+              </tr>
+              {{/each}}
+            {{else}}
+              <tr>
+                <td colspan="7" class="py-10 text-center text-slate-400 text-xs font-sans">
+                  No audit trail events found.
+                </td>
+              </tr>
+            {{/if}}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+{{> footer}}
+

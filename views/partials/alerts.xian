@@ -1,0 +1,32 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 no-print">
+  {{#if success_msg}}
+  <div class="mb-4 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg shadow-sm flex items-start justify-between">
+    <div class="flex items-center">
+      <i class="fa-solid fa-circle-check text-emerald-500 text-lg mr-3"></i>
+      <div>
+        <p class="text-sm font-semibold text-emerald-900">Success Action</p>
+        <p class="text-xs text-emerald-700 mt-0.5">{{ success_msg }}</p>
+      </div>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-800">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+  {{/if}}
+
+  {{#if error_msg}}
+  <div class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm flex items-start justify-between">
+    <div class="flex items-center">
+      <i class="fa-solid fa-circle-exclamation text-red-500 text-lg mr-3"></i>
+      <div>
+        <p class="text-sm font-semibold text-red-900">Security / System Alert</p>
+        <p class="text-xs text-red-700 mt-0.5">{{ error_msg }}</p>
+      </div>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-800">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+  {{/if}}
+</div>
+

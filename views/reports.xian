@@ -1,0 +1,350 @@
+{{> head}}
+{{> navbar}}
+
+<div class="flex flex-1">
+  {{> sidebar}}
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    {{> alerts}}
+
+    <!-- Header -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="fa-solid fa-file-invoice text-cyan-600"></i>
+          Custodial Reports &amp; Record Exports
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Generate official correctional facility reports &bull; Export to standard CSV or print certified PDF records
+        </p>
+      </div>
+
+      <!-- Action: Printable Report / PDF & Export -->
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="/reports/print?report_type={{ report_type }}&from_date={{ startDate }}&to_date={{ endDate }}&status={{ status }}" target="_blank"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm transition-colors">
+          <i class="fa-solid fa-print text-amber-400"></i>
+          <span>Print Official Report (PDF)</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Filter Configuration Box -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-6">
+      <form method="GET" action="/reports" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Report Type -->
+        <div>
+          <label for="report_type" class="block text-xs font-bold text-slate-700 uppercase mb-1">
+            Report Type <span class="text-cyan-600">*</span>
+          </label>
+          <select id="report_type" name="report_type" onchange="this.form.submit()"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 font-bold text-slate-900">
+            <option value="daily_visitor_log" {{#if (eq report_type 'daily_visitor_log')}}selected{{/if}}>1. Daily Visitor Logbook</option>
+            <option value="currently_checked_in" {{#if (eq report_type 'currently_checked_in')}}selected{{/if}}>2. Visitors Currently Checked In</option>
+            <option value="completed_denied" {{#if (eq report_type 'completed_denied')}}selected{{/if}}>3. Completed &amp; Denied Visits</option>
+            <option value="uncompleted_checkouts" {{#if (eq report_type 'uncompleted_checkouts')}}selected{{/if}}>4. Visitors Not Checked Out (Overstay)</option>
+            <option value="visitor_date_range" {{#if (eq report_type 'visitor_date_range')}}selected{{/if}}>5. Visitor Activity by Date Range</option>
+            <option value="cell_assignment_summary" {{#if (eq report_type 'cell_assignment_summary')}}selected{{/if}}>6. Cell Assignment &amp; Housing Summary</option>
+            <option value="headcount_records" {{#if (eq report_type 'headcount_records')}}selected{{/if}}>7. Daily Headcount Records</option>
+            <option value="headcount_discrepancies" {{#if (eq report_type 'headcount_discrepancies')}}selected{{/if}}>8. Headcount Discrepancies &amp; Reviews</option>
+            <option value="user_activity" {{#if (eq report_type 'user_activity')}}selected{{/if}}>9. User Activity &amp; Audit Trail</option>
+          </select>
+        </div>
+
+        <!-- Start Date -->
+        <div>
+          <label for="from_date" class="block text-xs font-bold text-slate-700 uppercase mb-1">From Date</label>
+          <input type="date" id="from_date" name="from_date" value="{{ startDate }}"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+        </div>
+
+        <!-- End Date -->
+        <div>
+          <label for="to_date" class="block text-xs font-bold text-slate-700 uppercase mb-1">To Date</label>
+          <input type="date" id="to_date" name="to_date" value="{{ endDate }}"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+        </div>
+
+        <!-- Submit Filter -->
+        <div class="flex items-end space-x-2">
+          <button type="submit" class="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-xs font-bold shadow-sm">
+            Generate Report
+          </button>
+          <a href="/reports" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50">
+            Reset
+          </a>
+        </div>
+
+      </form>
+
+      <!-- Metadata summary bar -->
+      <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+        <div>
+          <span>Facility: <strong class="text-slate-800">{{ facilityName }}</strong> ({{ facilityCode }})</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <span>Generated: <strong class="text-slate-800">{{ generatedAt }}</strong></span>
+          <span>Officer: <strong class="text-slate-800">{{ currentUser.name }}</strong> ({{ currentUser.role }})</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Metrics Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      {{#if (or (eq report_type 'daily_visitor_log') (eq report_type 'completed_denied') (eq report_type 'visitor_date_range'))}}
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-slate-500 uppercase">Total Visits In Range</div>
+        <div class="text-2xl font-black text-slate-900 mt-1">{{ summaryStats.total }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-emerald-600 uppercase">Checked In (Inside)</div>
+        <div class="text-2xl font-black text-emerald-800 mt-1">{{ summaryStats.checkedIn }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-blue-600 uppercase">Checked Out (Completed)</div>
+        <div class="text-2xl font-black text-blue-800 mt-1">{{ summaryStats.checkedOut }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-red-600 uppercase">Denied Visits</div>
+        <div class="text-2xl font-black text-red-800 mt-1">{{ summaryStats.denied }}</div>
+      </div>
+      {{/if}}
+
+      {{#if (or (eq report_type 'currently_checked_in') (eq report_type 'uncompleted_checkouts'))}}
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-emerald-600 uppercase">Total Active Inside</div>
+        <div class="text-2xl font-black text-emerald-900 mt-1">{{ summaryStats.total }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-red-600 uppercase">Overstay Alerts (>60m)</div>
+        <div class="text-2xl font-black text-red-900 mt-1">{{ summaryStats.overstayCount }}</div>
+      </div>
+      {{/if}}
+
+      {{#if (eq report_type 'cell_assignment_summary')}}
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-slate-500 uppercase">Total Housing Cells</div>
+        <div class="text-2xl font-black text-slate-900 mt-1">{{ summaryStats.totalCells }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-slate-500 uppercase">Facility Capacity</div>
+        <div class="text-2xl font-black text-slate-900 mt-1">{{ summaryStats.totalCapacity }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-indigo-600 uppercase">Current Inmates</div>
+        <div class="text-2xl font-black text-indigo-900 mt-1">{{ summaryStats.totalInmates }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-slate-500 uppercase">Occupancy Rate</div>
+        <div class="text-2xl font-black text-slate-900 mt-1">{{ summaryStats.overallOccupancyRate }}%</div>
+      </div>
+      {{/if}}
+
+      {{#if (or (eq report_type 'headcount_records') (eq report_type 'headcount_discrepancies'))}}
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-slate-500 uppercase">Total Shift Musters</div>
+        <div class="text-2xl font-black text-slate-900 mt-1">{{ summaryStats.totalCounts }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-emerald-600 uppercase">Matched Counts</div>
+        <div class="text-2xl font-black text-emerald-800 mt-1">{{ summaryStats.matched }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-red-600 uppercase">Discrepancies Logged</div>
+        <div class="text-2xl font-black text-red-800 mt-1">{{ summaryStats.discrepancies }}</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-[11px] font-bold text-purple-600 uppercase">Supervisory Reviews</div>
+        <div class="text-2xl font-black text-purple-800 mt-1">{{ summaryStats.reviewed }}</div>
+      </div>
+      {{/if}}
+
+      {{#if (eq report_type 'user_activity')}}
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm col-span-2">
+        <div class="text-[11px] font-bold text-slate-500 uppercase">Total Security &amp; Custody Events Recorded</div>
+        <div class="text-2xl font-black text-slate-900 mt-1">{{ summaryStats.totalActions }} Actions</div>
+      </div>
+      {{/if}}
+    </div>
+
+    <!-- Report Data Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      
+      <div class="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-semibold text-slate-600">
+        <span>Report Results ({{ reportData.length }} Records Found)</span>
+        <span class="text-slate-400">Filter Range: {{ startDate }} to {{ endDate }}</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+          
+          <!-- TABLE HEADER BY REPORT TYPE -->
+          <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider font-semibold">
+            {{#if (or (eq report_type 'daily_visitor_log') (eq report_type 'completed_denied') (eq report_type 'visitor_date_range') (eq report_type 'currently_checked_in') (eq report_type 'uncompleted_checkouts'))}}
+            <tr>
+              <th scope="col" class="py-3 px-3">Reference No</th>
+              <th scope="col" class="py-3 px-3">Visitor Name &amp; ID</th>
+              <th scope="col" class="py-3 px-3">Inmate Visited</th>
+              <th scope="col" class="py-3 px-3">Cell</th>
+              <th scope="col" class="py-3 px-3">Visit Date</th>
+              <th scope="col" class="py-3 px-3">Time In / Out</th>
+              <th scope="col" class="py-3 px-3">Status</th>
+              <th scope="col" class="py-3 px-3">Officer</th>
+            </tr>
+            {{/if}}
+
+            {{#if (eq report_type 'cell_assignment_summary')}}
+            <tr>
+              <th scope="col" class="py-3 px-4">Cell Number</th>
+              <th scope="col" class="py-3 px-4">Housing Block</th>
+              <th scope="col" class="py-3 px-4">Capacity</th>
+              <th scope="col" class="py-3 px-4">Occupancy</th>
+              <th scope="col" class="py-3 px-4">Occupancy Rate</th>
+              <th scope="col" class="py-3 px-4">Available Slots</th>
+              <th scope="col" class="py-3 px-4">Status</th>
+            </tr>
+            {{/if}}
+
+            {{#if (or (eq report_type 'headcount_records') (eq report_type 'headcount_discrepancies'))}}
+            <tr>
+              <th scope="col" class="py-3 px-4">Date</th>
+              <th scope="col" class="py-3 px-4">Shift</th>
+              <th scope="col" class="py-3 px-4">Expected</th>
+              <th scope="col" class="py-3 px-4">Verified</th>
+              <th scope="col" class="py-3 px-4">Discrepancy</th>
+              <th scope="col" class="py-3 px-4">Status</th>
+              <th scope="col" class="py-3 px-4">Officer Remarks</th>
+              <th scope="col" class="py-3 px-4">Supervisor Certification</th>
+            </tr>
+            {{/if}}
+
+            {{#if (eq report_type 'user_activity')}}
+            <tr>
+              <th scope="col" class="py-3 px-4">Timestamp</th>
+              <th scope="col" class="py-3 px-4">Officer Username</th>
+              <th scope="col" class="py-3 px-4">Action</th>
+              <th scope="col" class="py-3 px-4">Entity</th>
+              <th scope="col" class="py-3 px-4">Reference / ID</th>
+              <th scope="col" class="py-3 px-4">IP Address</th>
+              <th scope="col" class="py-3 px-4">Activity Details</th>
+            </tr>
+            {{/if}}
+          </thead>
+
+          <!-- TABLE BODY BY REPORT TYPE -->
+          <tbody class="divide-y divide-slate-200 text-slate-700">
+            {{#if reportData.length}}
+              
+              <!-- VISITOR DATA ROWS -->
+              {{#if (or (eq report_type 'daily_visitor_log') (eq report_type 'completed_denied') (eq report_type 'visitor_date_range') (eq report_type 'currently_checked_in') (eq report_type 'uncompleted_checkouts'))}}
+                {{#each reportData}}
+                <tr class="hover:bg-slate-50">
+                  <td class="py-3 px-3 font-mono font-bold text-slate-900">{{ this.reference_no }}</td>
+                  <td class="py-3 px-3">
+                    <div class="font-bold text-slate-900">{{ this.visitor.full_name }}</div>
+                    <div class="text-[10px] text-slate-400">{{ this.visitor.id_type }}: {{ this.visitor.id_number }}</div>
+                  </td>
+                  <td class="py-3 px-3">
+                    <div class="font-bold text-indigo-950">{{ this.inmate.last_name }}, {{ this.inmate.first_name }}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">{{ this.inmate.inmate_number }}</div>
+                  </td>
+                  <td class="py-3 px-3 whitespace-nowrap">
+                    {{#if this.inmate.cell}}{{ this.inmate.cell.cell_number }}{{else}}Unassigned{{/if}}
+                  </td>
+                  <td class="py-3 px-3 whitespace-nowrap">{{ this.visit_date }}</td>
+                  <td class="py-3 px-3 whitespace-nowrap">
+                    In: <strong class="text-slate-800">{{#if this.time_in}}{{ this.time_in }}{{else}}—{{/if}}</strong> | 
+                    Out: <strong class="text-slate-800">{{#if this.time_out}}{{ this.time_out }}{{else}}—{{/if}}</strong>
+                  </td>
+                  <td class="py-3 px-3 whitespace-nowrap">
+                    {{statusBadge this.status}}
+                    {{#if this.isOverstay}}
+                    <span class="block text-[10px] text-red-600 font-bold mt-0.5">Overstay: {{ this.durationMinutes }}m</span>
+                    {{/if}}
+                  </td>
+                  <td class="py-3 px-3 whitespace-nowrap">
+                    {{#if this.checkInOfficer}}{{ this.checkInOfficer.name }}{{else}}N/A{{/if}}
+                  </td>
+                </tr>
+                {{/each}}
+              {{/if}}
+
+              <!-- CELL ASSIGNMENT ROWS -->
+              {{#if (eq report_type 'cell_assignment_summary')}}
+                {{#each reportData}}
+                <tr class="hover:bg-slate-50">
+                  <td class="py-3 px-4 font-bold text-slate-900">{{ this.cell_number }}</td>
+                  <td class="py-3 px-4">{{ this.block }}</td>
+                  <td class="py-3 px-4 font-bold text-slate-700">{{ this.capacity }}</td>
+                  <td class="py-3 px-4 font-bold text-indigo-900">{{ this.occupancy }}</td>
+                  <td class="py-3 px-4 font-bold {{#if (gte this.percentage 90)}}text-red-600{{else}}text-slate-800{{/if}}">{{ this.percentage }}%</td>
+                  <td class="py-3 px-4 font-semibold text-emerald-700">{{ this.available }}</td>
+                  <td class="py-3 px-4">{{statusBadge this.status}}</td>
+                </tr>
+                {{/each}}
+              {{/if}}
+
+              <!-- HEADCOUNT ROWS -->
+              {{#if (or (eq report_type 'headcount_records') (eq report_type 'headcount_discrepancies'))}}
+                {{#each reportData}}
+                <tr class="hover:bg-slate-50">
+                  <td class="py-3 px-4 font-bold text-slate-900">{{ this.date }}</td>
+                  <td class="py-3 px-4 font-medium">{{ this.shift }}</td>
+                  <td class="py-3 px-4 font-bold text-slate-700">{{ this.expected_count }}</td>
+                  <td class="py-3 px-4 font-bold">{{#if (neq this.verified_count null)}}{{ this.verified_count }}{{else}}Pending{{/if}}</td>
+                  <td class="py-3 px-4 font-mono font-bold">
+                    {{#if (neq this.difference 0)}}
+                    <span class="text-red-600">{{#if (gt this.difference 0)}}+{{this.difference}}{{else}}{{this.difference}}{{/if}}</span>
+                    {{else}}
+                    <span class="text-emerald-600">0</span>
+                    {{/if}}
+                  </td>
+                  <td class="py-3 px-4">{{statusBadge this.status}}</td>
+                  <td class="py-3 px-4 max-w-xs truncate" title="{{ this.remarks }}">{{ this.remarks }}</td>
+                  <td class="py-3 px-4">
+                    {{#if this.reviewedBy}}
+                    <div class="font-bold text-purple-900">{{ this.reviewedBy.name }}</div>
+                    <div class="text-[10px] text-purple-700 truncate" title="{{ this.supervisor_notes }}">{{ this.supervisor_notes }}</div>
+                    {{else}}
+                    <span class="text-slate-400 italic">None</span>
+                    {{/if}}
+                  </td>
+                </tr>
+                {{/each}}
+              {{/if}}
+
+              <!-- USER ACTIVITY ROWS -->
+              {{#if (eq report_type 'user_activity')}}
+                {{#each reportData}}
+                <tr class="hover:bg-slate-50">
+                  <td class="py-3 px-4 whitespace-nowrap text-slate-500">{{formatDateTime this.created_at}}</td>
+                  <td class="py-3 px-4 font-bold text-slate-900">{{ this.username }}</td>
+                  <td class="py-3 px-4 font-semibold text-slate-800">{{ this.action }}</td>
+                  <td class="py-3 px-4 text-slate-600">{{ this.entity }}</td>
+                  <td class="py-3 px-4 font-mono text-[11px]">{{ this.entity_id }}</td>
+                  <td class="py-3 px-4 font-mono text-slate-500">{{ this.ip_address }}</td>
+                  <td class="py-3 px-4 max-w-md truncate" title="{{ this.details }}">{{ this.details }}</td>
+                </tr>
+                {{/each}}
+              {{/if}}
+
+            {{else}}
+              <tr>
+                <td colspan="8" class="py-12 text-center text-slate-400 text-xs">
+                  No report records found matching filter criteria.
+                </td>
+              </tr>
+            {{/if}}
+          </tbody>
+
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+{{> footer}}
+

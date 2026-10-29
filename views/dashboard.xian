@@ -1,0 +1,384 @@
+{{> head}}
+{{> navbar}}
+
+<div class="flex flex-1">
+  {{> sidebar}}
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    {{> alerts}}
+
+    <!-- Top Action Bar: Facility Header & Date Filter -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Live Facility Operational Feed</span>
+        </div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight sm:text-3xl">Custodial Command Dashboard</h2>
+        <p class="text-xs text-slate-500 mt-1">
+          <i class="fa-solid fa-building-shield mr-1 text-slate-400"></i> {{ facilityName }} &bull; Gate & Custodial Surveillance
+        </p>
+      </div>
+
+      <!-- Date Filter & Quick New Visitor Button -->
+      <div class="flex flex-wrap items-center gap-2">
+        <form method="GET" action="/dashboard" class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-300 shadow-sm">
+          <label for="date" class="text-xs font-semibold text-slate-600 flex items-center gap-1">
+            <i class="fa-regular fa-calendar"></i> Date:
+          </label>
+          <input type="date" id="date" name="date" value="{{ selectedDate }}" onchange="this.form.submit()" class="text-xs text-slate-800 font-medium focus:outline-none bg-transparent">
+        </form>
+
+        <a href="/visitors/register" class="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all duration-150">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Process Visitor</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Active Alerts Banner (Incomplete Check-outs / Overstay Alert / Headcount Discrepancies) -->
+    {{#if overstayAlerts.length}}
+    <div class="mb-6 bg-red-50 border-l-4 border-red-600 p-4 rounded-r-lg shadow-sm">
+      <div class="flex items-start">
+        <div class="flex-shrink-0 text-red-600 mt-0.5">
+          <i class="fa-solid fa-triangle-exclamation text-xl animate-bounce"></i>
+        </div>
+        <div class="ml-3 flex-1">
+          <h3 class="text-sm font-bold text-red-800 flex items-center justify-between">
+            <span>SECURITY ALERT: Incomplete Check-Outs / Overstay Detected ({{ overstayAlerts.length }} Visitors Exceeded Standard Duration)</span>
+            <span class="text-xs bg-red-200 text-red-900 px-2 py-0.5 rounded-full font-mono font-bold">Action Required</span>
+          </h3>
+          <div class="mt-2 text-xs text-red-700 space-y-1">
+            {{#each overstayAlerts}}
+            <div class="flex flex-wrap items-center justify-between border-b border-red-200 pb-1 pt-1">
+              <span>
+                <strong>{{ this.visitor_name }}</strong> visiting inmate <strong>{{ this.inmate_name }}</strong> (Ref: <code class="font-mono text-slate-900">{{ this.reference_no }}</code>)
+                &bull; In Area: <span class="underline">{{ this.visiting_area }}</span> &bull; Time In: {{ this.time_in }}
+              </span>
+              <span class="font-bold text-red-900 bg-red-200/80 px-2 py-0.5 rounded">
+                Duration: {{ this.durationMinutes }} mins
+              </span>
+            </div>
+            {{/each}}
+          </div>
+          <p class="mt-2 text-[11px] text-red-800 font-medium">
+            Gate officer must notify roving custodial guards to locate visitor or process their formal check-out in the Logbook.
+          </p>
+        </div>
+      </div>
+    </div>
+    {{/if}}
+
+    {{#if headcountAlerts.length}}
+    <div class="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <i class="fa-solid fa-bell text-amber-500 text-lg mr-3"></i>
+          <div>
+            <h4 class="text-sm font-bold text-amber-900">Custodial Attendance Advisory</h4>
+            <div class="text-xs text-amber-700 mt-0.5">
+              {{#each headcountAlerts}}
+              <p>{{ this }}</p>
+              {{/each}}
+            </div>
+          </div>
+        </div>
+        <a href="/headcount?date={{ selectedDate }}" class="text-xs font-bold text-amber-800 underline hover:text-amber-950">
+          Verify Headcount <i class="fa-solid fa-arrow-right ml-1"></i>
+        </a>
+      </div>
+    </div>
+    {{/if}}
+
+    <!-- Top Summary Stat Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      
+      <!-- Total Visitors Today -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Visitors Today</p>
+          <p class="text-2xl font-black text-slate-900 mt-1">{{ totalTodayVisits }}</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Logged for {{ selectedDate }}</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-users"></i>
+        </div>
+      </div>
+
+      <!-- Currently Inside Facility -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between ring-2 ring-emerald-500/30">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Currently Inside
+          </p>
+          <p class="text-2xl font-black text-emerald-900 mt-1">{{ currentInsideCount }}</p>
+          <p class="text-[11px] text-emerald-600 mt-0.5">Active checked-in visitors</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-door-open"></i>
+        </div>
+      </div>
+
+      <!-- Completed Visits Today -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Completed Visits</p>
+          <p class="text-2xl font-black text-slate-900 mt-1">{{ completedVisits }}</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Checked out safely</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+      </div>
+
+      <!-- Active Inmates Custody Count -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Inmates</p>
+          <p class="text-2xl font-black text-indigo-900 mt-1">{{ activeInmatesCount }}</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Official custody muster</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-person-shelter"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Secondary Metric Bar: Expected / Denied / Headcount Today Status -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      
+      <!-- Expected Appointments Card -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+            <i class="fa-regular fa-calendar-check"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-semibold">Expected Appointments</div>
+            <div class="text-lg font-bold text-slate-900">{{ expectedVisits }} Scheduled</div>
+          </div>
+        </div>
+        <a href="/logbook?status=Registered" class="text-xs text-sky-600 hover:underline font-semibold">View</a>
+      </div>
+
+      <!-- Denied Visits Card -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-ban"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-semibold">Denied Gate Entries</div>
+            <div class="text-lg font-bold text-slate-900">{{ deniedVisits }} Blocked</div>
+          </div>
+        </div>
+        <a href="/logbook?status=Denied" class="text-xs text-red-600 hover:underline font-semibold">Audit</a>
+      </div>
+
+      <!-- Today's Headcount Status Card -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-clipboard-user"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-semibold">Headcount Muster Today</div>
+            <div class="text-xs font-bold text-slate-800">
+              {{#if todayHeadcounts.length}}
+                {{ todayHeadcounts.length }} Shift Record(s) Logged
+              {{else}}
+                <span class="text-amber-600">No shifts recorded</span>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+        <a href="/headcount" class="text-xs text-teal-600 hover:underline font-semibold">Muster</a>
+      </div>
+
+    </div>
+
+    <!-- Middle Split: Cell Occupancy Overview & Headcount Shifts -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      
+      <!-- Cell Occupancy Breakdown (2 cols) -->
+      <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+              <i class="fa-solid fa-dungeon text-indigo-600"></i>
+              Cell Occupancy &amp; Capacity Distribution
+            </h3>
+            <p class="text-xs text-slate-500">Live monitoring of inmate housing cells and units</p>
+          </div>
+          <a href="/cells" class="text-xs font-semibold text-sky-600 hover:underline">
+            Manage Cell Assignments &rarr;
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {{#each cellBreakdown}}
+          <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex flex-col justify-between hover:bg-slate-100/70 transition-colors">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800">{{ this.cell_number }}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded {{#if this.isFull}}bg-red-100 text-red-800 font-bold{{else}}bg-emerald-100 text-emerald-800{{/if}}">
+                  {{#if this.isFull}}FULL{{else}}Available{{/if}}
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-500 truncate mt-0.5">{{ this.block }}</p>
+            </div>
+
+            <div class="mt-3">
+              <div class="flex items-center justify-between text-xs font-medium text-slate-600 mb-1">
+                <span>{{ this.occupancy }} / {{ this.capacity }} inmates</span>
+                <span class="font-bold {{#if (gte this.percentage 90)}}text-red-600{{else}}text-slate-700{{/if}}">{{ this.percentage }}%</span>
+              </div>
+              <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                <div class="h-2 rounded-full {{#if (gte this.percentage 90)}}bg-red-500{{else if (gte this.percentage 70)}}bg-amber-500{{else}}bg-sky-500{{/if}}" style="width: {{ this.percentage }}%"></div>
+              </div>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+
+      <!-- Headcount Shift Summary (1 col) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-check text-teal-600"></i>
+                Headcount Status
+              </h3>
+              <p class="text-xs text-slate-500">Muster verification for {{ selectedDate }}</p>
+            </div>
+            <a href="/headcount" class="text-xs font-semibold text-teal-600 hover:underline">Full Log</a>
+          </div>
+
+          <div class="space-y-3">
+            {{#if todayHeadcounts.length}}
+              {{#each todayHeadcounts}}
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-slate-800">{{ this.shift }}</div>
+                  <div class="text-[11px] text-slate-500 mt-0.5">
+                    Expected: <span class="font-bold text-slate-700">{{ this.expected_count }}</span> | 
+                    Verified: <span class="font-bold text-slate-700">{{#if (neq this.verified_count null)}}{{ this.verified_count }}{{else}}Pending{{/if}}</span>
+                  </div>
+                </div>
+                <div>
+                  {{statusBadge this.status}}
+                </div>
+              </div>
+              {{/each}}
+            {{else}}
+              <div class="text-center py-6 text-slate-400 text-xs">
+                <i class="fa-regular fa-calendar-xmark text-2xl mb-2 text-slate-300"></i>
+                <p>No shift headcount recorded yet for this date.</p>
+                <a href="/headcount" class="inline-block mt-3 px-3 py-1.5 bg-teal-600 text-white rounded text-xs font-semibold hover:bg-teal-700">
+                  Submit Count
+                </a>
+              </div>
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+          <p class="text-[11px] text-slate-400">
+            Rule: Verification must be completed explicitly by authorized gate officer.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Latest Visitor Logbook Entries Section -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-slate-50">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+            <i class="fa-solid fa-list-ul text-sky-600"></i>
+            Latest Visitor Log Entries
+          </h3>
+          <p class="text-xs text-slate-500">Real-time gate ingress and egress activity</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <a href="/logbook" class="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg shadow-sm transition-colors">
+            View Complete Logbook &rarr;
+          </a>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider font-semibold">
+            <tr>
+              <th scope="col" class="py-3 px-4">Reference No</th>
+              <th scope="col" class="py-3 px-4">Visitor Name</th>
+              <th scope="col" class="py-3 px-4">Inmate Visited</th>
+              <th scope="col" class="py-3 px-4">Purpose / Area</th>
+              <th scope="col" class="py-3 px-4">Time In / Out</th>
+              <th scope="col" class="py-3 px-4">Status</th>
+              <th scope="col" class="py-3 px-4 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-700">
+            {{#if latestVisits.length}}
+              {{#each latestVisits}}
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-3 px-4 font-mono font-bold text-slate-900">
+                  {{ this.reference_no }}
+                </td>
+                <td class="py-3 px-4">
+                  <div class="font-semibold text-slate-900">{{ this.visitor.full_name }}</div>
+                  <div class="text-[10px] text-slate-400">{{ this.relationship }} &bull; {{ this.visitor.id_type }}</div>
+                </td>
+                <td class="py-3 px-4">
+                  <div class="font-semibold text-indigo-950">{{ this.inmate.last_name }}, {{ this.inmate.first_name }}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">{{ this.inmate.inmate_number }}</div>
+                </td>
+                <td class="py-3 px-4">
+                  <div>{{ this.purpose }}</div>
+                  <div class="text-[10px] text-slate-400">{{ this.visiting_area }}</div>
+                </td>
+                <td class="py-3 px-4">
+                  <div><span class="text-slate-400">In:</span> <span class="font-medium text-slate-900">{{#if this.time_in}}{{ this.time_in }}{{else}}—{{/if}}</span></div>
+                  <div><span class="text-slate-400">Out:</span> <span class="font-medium text-slate-900">{{#if this.time_out}}{{ this.time_out }}{{else}}—{{/if}}</span></div>
+                </td>
+                <td class="py-3 px-4">
+                  {{statusBadge this.status}}
+                </td>
+                <td class="py-3 px-4 text-right space-x-1">
+                  {{#if (eq this.status 'Checked In')}}
+                  <form action="/logbook/{{ this.id }}/check-out" method="POST" class="inline" onsubmit="return confirm('Confirm check-out for visitor {{ this.visitor.full_name }}?')">
+                    <button type="submit" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold text-[11px] shadow-sm">
+                      Check Out
+                    </button>
+                  </form>
+                  {{/if}}
+                  <a href="/visitors/pass/{{ this.id }}" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded font-semibold text-[11px]">
+                    <i class="fa-solid fa-print"></i> Pass
+                  </a>
+                </td>
+              </tr>
+              {{/each}}
+            {{else}}
+              <tr>
+                <td colspan="7" class="py-8 text-center text-slate-400 text-xs">
+                  No visitor log entries found.
+                </td>
+              </tr>
+            {{/if}}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+{{> footer}}

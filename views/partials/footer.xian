@@ -1,0 +1,19 @@
+<footer class="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 mt-auto text-xs no-print">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center space-x-2">
+      <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
+        <i class="fa-solid fa-lock text-[10px]"></i>
+      </div>
+      <span>
+        <strong>BUREAU OF JAIL MANAGEMENT AND PENOLOGY</strong> &bull; Custodial & Gate Officer Department
+      </span>
+    </div>
+
+    <div class="text-center md:text-right text-slate-400">
+      <p>CONFIDENTIAL: Authorized Custodial Personnel Only &bull; BJMP SOP 2024-03 Compliant</p>
+      <p class="text-[11px] text-slate-400 mt-0.5">Records retention policy strictly enforced &bull; System Version 2.4.0</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

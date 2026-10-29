@@ -1,0 +1,313 @@
+{{> head}}
+{{> navbar}}
+
+<div class="flex flex-1">
+  {{> sidebar}}
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    {{> alerts}}
+
+    <!-- Header -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="fa-solid fa-users-gear text-rose-600"></i>
+          Officer &amp; Personnel Account Management
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Create, update, deactivate officer accounts, and assign role-based permissions (Warden / Admin Clearance)
+        </p>
+      </div>
+
+      <div>
+        <button type="button" onclick="openCreateUserModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Add New Officer Account</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-500">
+        <span>Active &amp; Inactive Custodial Staff Accounts: <strong class="text-slate-800">{{ users.length }}</strong></span>
+        <span class="text-rose-600 font-semibold"><i class="fa-solid fa-lock text-[10px]"></i> Administrator Privileges</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider font-semibold">
+            <tr>
+              <th scope="col" class="py-3 px-4">Officer Name &amp; Rank</th>
+              <th scope="col" class="py-3 px-4">Username</th>
+              <th scope="col" class="py-3 px-4">Official Email</th>
+              <th scope="col" class="py-3 px-4">Role Permission</th>
+              <th scope="col" class="py-3 px-4">Badge Number</th>
+              <th scope="col" class="py-3 px-4">Account Status</th>
+              <th scope="col" class="py-3 px-4">Last Login</th>
+              <th scope="col" class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-700">
+            {{#each users}}
+            <tr class="hover:bg-slate-50">
+              <td class="py-3 px-4 font-bold text-slate-900">
+                {{ this.name }}
+              </td>
+              <td class="py-3 px-4 font-mono text-slate-600">
+                {{ this.username }}
+              </td>
+              <td class="py-3 px-4 text-slate-600">
+                {{ this.email }}
+              </td>
+              <td class="py-3 px-4">
+                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold uppercase {{#if (eq this.role 'admin')}}bg-rose-100 text-rose-800 border border-rose-300{{else if (eq this.role 'supervisor')}}bg-amber-100 text-amber-800 border border-amber-300{{else}}bg-sky-100 text-sky-800 border border-sky-300{{/if}}">
+                  {{ this.role }}
+                </span>
+              </td>
+              <td class="py-3 px-4 font-mono font-semibold text-slate-800">
+                {{#if this.badge_number}}{{ this.badge_number }}{{else}}—{{/if}}
+              </td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{#if (eq this.status 'active')}}bg-emerald-100 text-emerald-800{{else}}bg-slate-200 text-slate-700{{/if}}">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 {{#if (eq this.status 'active')}}bg-emerald-500{{else}}bg-slate-400{{/if}}"></span>
+                  {{ this.status }}
+                </span>
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap text-slate-500">
+                {{#if this.last_login}}{{formatDateTime this.last_login}}{{else}}Never{{/if}}
+              </td>
+              <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
+                
+                <!-- Edit Button -->
+                <button type="button" onclick="openEditUserModal({{json this}})"
+                  class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded font-semibold text-[11px]" title="Edit Details">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+
+                <!-- Reset Password Button -->
+                <button type="button" onclick="openResetPasswordModal('{{ this.id }}', '{{ this.name }}', '{{ this.username }}')"
+                  class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded font-semibold text-[11px]" title="Reset Password">
+                  <i class="fa-solid fa-key"></i>
+                </button>
+
+                <!-- Deactivate / Activate Button -->
+                <form action="/users/{{ this.id }}/status" method="POST" class="inline"
+                  onsubmit="return confirm('Confirm changing account status for officer {{ this.name }}?')">
+                  <button type="submit"
+                    class="px-2 py-1 rounded font-semibold text-[11px] border {{#if (eq this.status 'active')}}bg-red-50 hover:bg-red-100 text-red-700 border-red-300{{else}}bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300{{/if}}"
+                    title="{{#if (eq this.status 'active')}}Deactivate Account{{else}}Activate Account{{/if}}">
+                    <i class="fa-solid {{#if (eq this.status 'active')}}fa-user-slash{{else}}fa-user-check{{/if}}"></i>
+                  </button>
+                </form>
+
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- 1. Create User Modal -->
+<div id="create-user-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+    <div class="bg-rose-700 text-white p-4 flex items-center justify-between">
+      <h3 class="text-sm font-bold flex items-center gap-2">
+        <i class="fa-solid fa-user-plus"></i>
+        Create Authorized Officer Account
+      </h3>
+      <button onclick="closeCreateUserModal()" class="text-rose-200 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form action="/users" method="POST">
+      <div class="p-5 text-xs space-y-3">
+        <div>
+          <label for="create-name" class="block font-bold text-slate-700 mb-1">Full Name &amp; Rank <span class="text-red-500">*</span></label>
+          <input type="text" id="create-name" name="name" required placeholder="e.g. JO1 Ronald C. Ramos"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="create-username" class="block font-bold text-slate-700 mb-1">Username <span class="text-red-500">*</span></label>
+            <input type="text" id="create-username" name="username" required placeholder="e.g. ronald.ramos"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500">
+          </div>
+          <div>
+            <label for="create-badge" class="block font-bold text-slate-700 mb-1">Badge Number</label>
+            <input type="text" id="create-badge" name="badge_number" placeholder="BJMP-GO-102"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500">
+          </div>
+        </div>
+
+        <div>
+          <label for="create-email" class="block font-bold text-slate-700 mb-1">Official Email Address <span class="text-red-500">*</span></label>
+          <input type="email" id="create-email" name="email" required placeholder="officer@bjmp.gov.ph"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500">
+        </div>
+
+        <div>
+          <label for="create-role" class="block font-bold text-slate-700 mb-1">System Role Permission <span class="text-red-500">*</span></label>
+          <select id="create-role" name="role" required class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 font-bold">
+            <option value="gate_officer">Gate Officer (Visitor Reg, Check In/Out, Logbook)</option>
+            <option value="supervisor">Custodial Supervisor (Cell Transfers, Headcount Reviews, Logs)</option>
+            <option value="admin">System Administrator / Jail Warden (Full System Control)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="create-password" class="block font-bold text-slate-700 mb-1">Temporary Password <span class="text-red-500">*</span></label>
+          <input type="password" id="create-password" name="password" required minlength="6" placeholder="At least 6 characters"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500">
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
+        <button type="button" onclick="closeCreateUserModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">
+          Cancel
+        </button>
+        <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm">
+          Create Account
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 2. Edit User Modal -->
+<div id="edit-user-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+    <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+      <h3 class="text-sm font-bold flex items-center gap-2">
+        <i class="fa-solid fa-pen-to-square text-sky-400"></i>
+        Update Officer Profile
+      </h3>
+      <button onclick="closeEditUserModal()" class="text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form id="edit-user-form" method="POST" action="">
+      <div class="p-5 text-xs space-y-3">
+        <div>
+          <label for="edit-user-name" class="block font-bold text-slate-700 mb-1">Full Name &amp; Rank</label>
+          <input type="text" id="edit-user-name" name="name" required
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+
+        <div>
+          <label for="edit-user-email" class="block font-bold text-slate-700 mb-1">Email</label>
+          <input type="email" id="edit-user-email" name="email" required
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="edit-user-role" class="block font-bold text-slate-700 mb-1">Role</label>
+            <select id="edit-user-role" name="role" required class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="gate_officer">gate_officer</option>
+              <option value="supervisor">supervisor</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+          <div>
+            <label for="edit-user-badge" class="block font-bold text-slate-700 mb-1">Badge Number</label>
+            <input type="text" id="edit-user-badge" name="badge_number"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
+        <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">
+          Cancel
+        </button>
+        <button type="submit" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-sm">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 3. Reset Password Modal -->
+<div id="reset-password-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200 overflow-hidden">
+    <div class="bg-amber-600 text-white p-4 flex items-center justify-between">
+      <h3 class="text-sm font-bold flex items-center gap-2">
+        <i class="fa-solid fa-key"></i>
+        Reset Officer Password
+      </h3>
+      <button onclick="closeResetPasswordModal()" class="text-amber-200 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form id="reset-password-form" method="POST" action="">
+      <div class="p-5 text-xs space-y-3">
+        <p class="text-slate-600">
+          Resetting password for: <strong id="reset-user-name" class="text-slate-900"></strong> (<code id="reset-user-username"></code>)
+        </p>
+
+        <div>
+          <label for="new_password" class="block font-bold text-slate-700 mb-1">New Password <span class="text-red-500">*</span></label>
+          <input type="password" id="new_password" name="new_password" required minlength="6" placeholder="Min. 6 characters"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
+        <button type="button" onclick="closeResetPasswordModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">
+          Cancel
+        </button>
+        <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-sm">
+          Update Password
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openCreateUserModal() {
+    document.getElementById('create-user-modal').classList.remove('hidden');
+  }
+  function closeCreateUserModal() {
+    document.getElementById('create-user-modal').classList.add('hidden');
+  }
+
+  function openEditUserModal(u) {
+    document.getElementById('edit-user-form').action = `/users/${u.id}/update`;
+    document.getElementById('edit-user-name').value = u.name;
+    document.getElementById('edit-user-email').value = u.email;
+    document.getElementById('edit-user-role').value = u.role;
+    document.getElementById('edit-user-badge').value = u.badge_number || '';
+    document.getElementById('edit-user-modal').classList.remove('hidden');
+  }
+  function closeEditUserModal() {
+    document.getElementById('edit-user-modal').classList.add('hidden');
+  }
+
+  function openResetPasswordModal(id, name, username) {
+    document.getElementById('reset-password-form').action = `/users/${id}/reset-password`;
+    document.getElementById('reset-user-name').textContent = name;
+    document.getElementById('reset-user-username').textContent = username;
+    document.getElementById('new_password').value = '';
+    document.getElementById('reset-password-modal').classList.remove('hidden');
+  }
+  function closeResetPasswordModal() {
+    document.getElementById('reset-password-modal').classList.add('hidden');
+  }
+</script>
+
+{{> footer}}
+

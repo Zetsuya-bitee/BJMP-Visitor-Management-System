@@ -1,0 +1,390 @@
+{{> head}}
+{{> navbar}}
+
+<div class="flex flex-1">
+  {{> sidebar}}
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    {{> alerts}}
+
+    <!-- Header -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="fa-solid fa-id-badge text-emerald-600"></i>
+          Visitor Registration &amp; Gate Processing
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Register new visitors, process immediate check-ins, or record authorized denied entries.
+        </p>
+      </div>
+      <a href="/logbook" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 px-3 py-2 rounded-lg hover:bg-slate-50 shadow-sm">
+        <i class="fa-solid fa-book-journal-whills"></i>
+        <span>Go to Logbook</span>
+      </a>
+    </div>
+
+    <!-- Quick Search Autofill Card for Repeat Visitors -->
+    <div class="bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 rounded-xl p-4 mb-6 shadow-sm">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-sky-600 text-white flex items-center justify-center text-lg">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wide">Quick Lookup for Repeat Visitors</h4>
+            <p class="text-[11px] text-slate-600">Type visitor's name or valid ID number to autofill profile fields</p>
+          </div>
+        </div>
+        <div class="w-full sm:w-80 relative">
+          <input type="text" id="quick-search-input" placeholder="Search name or ID number..."
+            class="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+            autocomplete="off">
+          <div id="quick-search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto text-xs divide-y divide-slate-100"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Registration Form -->
+    <form action="/visitors/register" method="POST" class="space-y-6" onsubmit="return validateVisitorForm()">
+      
+      <!-- Section 1: Visitor Profile Information -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 text-xs flex items-center justify-center font-bold">1</span>
+            Visitor Personal Information &amp; Official Identification
+          </h3>
+          <span class="text-[11px] text-slate-400 font-mono">ID: {{ generatedVisitorCode }}</span>
+        </div>
+
+        <input type="hidden" name="visitor_code" id="visitor_code" value="{{ generatedVisitorCode }}">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <!-- Full Name -->
+          <div class="md:col-span-2">
+            <label for="full_name" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Full Legal Name <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="full_name" name="full_name" required placeholder="e.g. Maria Clara Dela Cruz"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+
+          <!-- Gender -->
+          <div>
+            <label for="gender" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Gender</label>
+            <select id="gender" name="gender" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- Valid ID Type -->
+          <div>
+            <label for="id_type" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Valid ID Presented <span class="text-red-500">*</span>
+            </label>
+            <select id="id_type" name="id_type" required class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="National ID (PhilSys)">National ID (PhilSys)</option>
+              <option value="Driver's License">Driver's License (LTO)</option>
+              <option value="Philippine Passport">Philippine Passport (DFA)</option>
+              <option value="UMID">UMID (SSS/GSIS)</option>
+              <option value="Postal ID">Postal ID</option>
+              <option value="Voter's ID">Voter's Certification / ID</option>
+              <option value="PRC ID">PRC Professional License</option>
+              <option value="Senior Citizen ID">Senior Citizen ID</option>
+              <option value="Barangay Clearance ID">Barangay Clearance ID</option>
+              <option value="Government Employee ID">Government Employee ID</option>
+            </select>
+          </div>
+
+          <!-- ID Number -->
+          <div>
+            <label for="id_number" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Identification Number <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="id_number" name="id_number" required placeholder="e.g. PH-2024-998124"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+
+          <!-- Contact Number -->
+          <div>
+            <label for="contact_number" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Contact Number
+            </label>
+            <input type="text" id="contact_number" name="contact_number" placeholder="e.g. 0917-123-4567"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+
+          <!-- Address -->
+          <div class="md:col-span-3">
+            <label for="address" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Residential Address
+            </label>
+            <input type="text" id="address" name="address" placeholder="e.g. Barangay San Roque, San Jose, Occidental Mindoro"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 2: Inmate & Visit Association -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-800 text-xs flex items-center justify-center font-bold">2</span>
+            Inmate in Custody &amp; Visit Details
+          </h3>
+          <span class="text-[11px] text-slate-400 font-mono">REF: {{ generatedRefNumber }}</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <!-- Inmate Select -->
+          <div class="md:col-span-2">
+            <label for="inmate_id" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Inmate Being Visited <span class="text-red-500">*</span>
+            </label>
+            <select id="inmate_id" name="inmate_id" required class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="">-- Select Inmate in Official Custody --</option>
+              {{#each inmates}}
+              <option value="{{ this.id }}">
+                {{ this.last_name }}, {{ this.first_name }} ({{ this.inmate_number }}) - [{{#if this.cell}}{{ this.cell.cell_number }} - {{ this.cell.block }}{{else}}Unassigned{{/if}}]
+              </option>
+              {{/each}}
+            </select>
+          </div>
+
+          <!-- Relationship -->
+          <div>
+            <label for="relationship" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Relationship to Inmate <span class="text-red-500">*</span>
+            </label>
+            <select id="relationship" name="relationship" required class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="Spouse">Spouse / Partner</option>
+              <option value="Parent">Parent (Mother / Father)</option>
+              <option value="Child">Child (Son / Daughter)</option>
+              <option value="Sibling">Sibling (Brother / Sister)</option>
+              <option value="Legal Counsel">Legal Counsel / Attorney</option>
+              <option value="Relative">Extended Relative</option>
+              <option value="Friend">Friend / Acquaintance</option>
+              <option value="Spiritual Advisor">Spiritual / Religious Advisor</option>
+              <option value="Medical Officer">External Medical Personnel</option>
+              <option value="Other">Other Authorized Person</option>
+            </select>
+          </div>
+
+          <!-- Purpose of Visit -->
+          <div>
+            <label for="purpose" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Purpose of Visit <span class="text-red-500">*</span>
+            </label>
+            <select id="purpose" name="purpose" required class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="Family Visit">Family Welfare Visit</option>
+              <option value="Legal Consultation">Legal Consultation</option>
+              <option value="Medical / Welfare Supply">Medical or Welfare Supply Handover</option>
+              <option value="Religious / Pastoral Care">Religious / Pastoral Care</option>
+              <option value="Official Investigation">Official Investigation / Court Notice</option>
+              <option value="Personal Welfare">Personal Welfare Check</option>
+            </select>
+          </div>
+
+          <!-- Visiting Area -->
+          <div>
+            <label for="visiting_area" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Assigned Visiting Venue <span class="text-red-500">*</span>
+            </label>
+            <select id="visiting_area" name="visiting_area" required class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+              {{#each visitingAreas}}
+              <option value="{{ this }}">{{ this }}</option>
+              {{/each}}
+            </select>
+          </div>
+
+          <!-- Visit Date -->
+          <div>
+            <label for="visit_date" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Visit Date <span class="text-red-500">*</span>
+            </label>
+            <input type="date" id="visit_date" name="visit_date" value="{{ todayStr }}" required
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 3: Gate Status & Security Clearance -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 text-xs flex items-center justify-center font-bold">3</span>
+            Gate Clearance &amp; Action Processing
+          </h3>
+          <span class="text-[11px] text-slate-500">Processing Officer: <strong class="text-slate-800">{{ currentUser.name }}</strong> ({{ currentUser.role }})</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <!-- Initial Action / Status -->
+          <div>
+            <label for="initial_status" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Gate Clearance Status <span class="text-red-500">*</span>
+            </label>
+            <select id="initial_status" name="initial_status" required onchange="handleStatusChange()"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 font-bold text-slate-900">
+              <option value="Checked In">Check In Immediately (Visitor at Gate Now)</option>
+              <option value="Registered">Pre-Register Appointment (Upcoming Visit)</option>
+              <option value="Denied">Deny Entry (Security / Rule Violation)</option>
+            </select>
+          </div>
+
+          <!-- Time In -->
+          <div id="time-in-container">
+            <label for="time_in" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Time of Entry
+            </label>
+            <input type="text" id="time_in" name="time_in" value="{{ currentTimeStr }}"
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+
+          <!-- Denial Reason (Visible only when Denied selected) -->
+          <div id="denial-reason-container" class="hidden md:col-span-2">
+            <label for="denial_reason" class="block text-xs font-semibold text-red-700 uppercase mb-1">
+              Official Denial Justification Reason <span class="text-red-500">* Mandatory</span>
+            </label>
+            <input type="text" id="denial_reason" name="denial_reason" placeholder="e.g. Failed contraband inspection / Intoxicated / Unauthorized items"
+              class="w-full text-xs px-3 py-2 bg-red-50 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-red-900">
+          </div>
+
+          <!-- General Remarks -->
+          <div class="md:col-span-3">
+            <label for="remarks" class="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Gate Inspection Remarks &amp; Notes
+            </label>
+            <textarea id="remarks" name="remarks" rows="2" placeholder="e.g. Belongings inspected and surrendered at gate locker. Passed metal detector screening."
+              class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+          </div>
+
+        </div>
+
+        <!-- Form Submit Bar -->
+        <div class="mt-6 pt-4 border-t border-slate-200 flex items-center justify-end space-x-3">
+          <a href="/dashboard" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+            Cancel
+          </a>
+          <button type="submit" id="submit-btn" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-2">
+            <i class="fa-solid fa-check"></i>
+            <span>Process &amp; Issue Visitor Pass</span>
+          </button>
+        </div>
+
+      </div>
+
+    </form>
+
+  </main>
+</div>
+
+<!-- Quick Search and Form Logic Scripts -->
+<script>
+  function handleStatusChange() {
+    const status = document.getElementById('initial_status').value;
+    const denialContainer = document.getElementById('denial-reason-container');
+    const timeInContainer = document.getElementById('time-in-container');
+    const denialInput = document.getElementById('denial_reason');
+    const submitBtn = document.getElementById('submit-btn');
+
+    if (status === 'Denied') {
+      denialContainer.classList.remove('hidden');
+      denialInput.required = true;
+      submitBtn.className = "px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-2";
+      submitBtn.innerHTML = '<i class="fa-solid fa-ban"></i><span>Record Denied Entry</span>';
+    } else {
+      denialContainer.classList.add('hidden');
+      denialInput.required = false;
+      if (status === 'Registered') {
+        submitBtn.className = "px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-2";
+        submitBtn.innerHTML = '<i class="fa-solid fa-calendar-check"></i><span>Pre-Register Visitor</span>';
+      } else {
+        submitBtn.className = "px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-2";
+        submitBtn.innerHTML = '<i class="fa-solid fa-check"></i><span>Process &amp; Issue Visitor Pass</span>';
+      }
+    }
+  }
+
+  function validateVisitorForm() {
+    const status = document.getElementById('initial_status').value;
+    const denialInput = document.getElementById('denial_reason');
+    if (status === 'Denied' && (!denialInput.value || denialInput.value.trim() === '')) {
+      alert('Security Policy: You must provide an official justification reason when denying entry.');
+      denialInput.focus();
+      return false;
+    }
+    return confirm('Please confirm processing of this visitor record.');
+  }
+
+  // Quick Search for Repeat Visitors
+  const searchInput = document.getElementById('quick-search-input');
+  const resultsDiv = document.getElementById('quick-search-results');
+  let searchTimer;
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const query = searchInput.value.trim();
+    if (query.length < 2) {
+      resultsDiv.classList.add('hidden');
+      return;
+    }
+
+    searchTimer = setTimeout(async () => {
+      try {
+        const res = await fetch('/visitors/search?q=' + encodeURIComponent(query));
+        const visitors = await res.json();
+        resultsDiv.innerHTML = '';
+
+        if (visitors.length === 0) {
+          resultsDiv.innerHTML = '<div class="p-3 text-slate-400 text-center">No existing visitor profile found.</div>';
+          resultsDiv.classList.remove('hidden');
+          return;
+        }
+
+        visitors.forEach(v => {
+          const item = document.createElement('div');
+          item.className = 'p-2.5 hover:bg-sky-50 cursor-pointer transition-colors';
+          item.innerHTML = `
+            <div class="font-bold text-slate-900">${v.full_name}</div>
+            <div class="text-[10px] text-slate-500">${v.id_type}: ${v.id_number} &bull; ${v.contact_number || 'No contact'}</div>
+          `;
+          item.addEventListener('click', () => {
+            document.getElementById('full_name').value = v.full_name;
+            document.getElementById('id_type').value = v.id_type;
+            document.getElementById('id_number').value = v.id_number;
+            document.getElementById('contact_number').value = v.contact_number || '';
+            document.getElementById('address').value = v.address || '';
+            if (v.gender) document.getElementById('gender').value = v.gender;
+            if (v.visitor_code) document.getElementById('visitor_code').value = v.visitor_code;
+
+            resultsDiv.classList.add('hidden');
+            searchInput.value = '';
+          });
+          resultsDiv.appendChild(item);
+        });
+
+        resultsDiv.classList.remove('hidden');
+      } catch (err) {
+        console.error('Search failed', err);
+      }
+    }, 250);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+      resultsDiv.classList.add('hidden');
+    }
+  });
+</script>
+
+{{> footer}}
+

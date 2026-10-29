@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; color: black !important; font-size: 11px !important; }
+      @page { margin: 15mm; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 p-4 sm:p-8">
+
+  <!-- Print Controls -->
+  <div class="max-w-5xl mx-auto mb-4 flex items-center justify-between no-print">
+    <button onclick="window.close()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold rounded">
+      &larr; Close Window
+    </button>
+    <button onclick="window.print()" class="px-4 py-1.5 bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold rounded shadow flex items-center gap-2">
+      <i class="fa-solid fa-print"></i> Print Report / Save PDF
+    </button>
+  </div>
+
+  <!-- Document Sheet -->
+  <div class="max-w-5xl mx-auto bg-white p-8 border border-slate-300 rounded-xl shadow-lg relative print:shadow-none print:border-none print:p-0">
+    
+    <!-- Republic Header -->
+    <div class="text-center border-b-2 border-slate-900 pb-4 mb-6">
+      <div class="text-[10px] tracking-widest uppercase font-semibold text-slate-600">
+        Republic of the Philippines &bull; Department of the Interior and Local Government
+      </div>
+      <div class="text-base font-black tracking-tight text-slate-950 uppercase sm:text-lg">
+        BUREAU OF JAIL MANAGEMENT AND PENOLOGY
+      </div>
+      <div class="text-xs font-bold text-sky-900 uppercase">
+        {{ facilityName }} &bull; Gate &amp; Custodial Department
+      </div>
+      <div class="text-[10px] text-slate-500 font-mono mt-0.5">
+        Facility Code: {{ facilityCode }}
+      </div>
+      <div class="mt-3 inline-block px-4 py-1 bg-slate-900 text-white text-xs font-black tracking-wider uppercase rounded">
+        OFFICIAL CERTIFIED REPORT: {{ report_type }}
+      </div>
+    </div>
+
+    <!-- Filter & Metadata Parameters -->
+    <div class="bg-slate-50 border border-slate-200 rounded p-3 text-xs mb-6 grid grid-cols-3 gap-2">
+      <div>
+        <span class="text-slate-500 uppercase font-semibold text-[9px] block">Reporting Date Range:</span>
+        <strong class="text-slate-900">{{ startDate }} to {{ endDate }}</strong>
+      </div>
+      <div>
+        <span class="text-slate-500 uppercase font-semibold text-[9px] block">Generated Timestamp:</span>
+        <strong class="text-slate-900">{{ generatedAt }}</strong>
+      </div>
+      <div>
+        <span class="text-slate-500 uppercase font-semibold text-[9px] block">Certified Officer:</span>
+        <strong class="text-slate-900">{{ currentUser.name }} ({{ currentUser.role }})</strong>
+      </div>
+    </div>
+
+    <!-- Tabular Data -->
+    <div class="overflow-x-auto mb-8">
+      <table class="min-w-full text-xs text-left border border-slate-300 divide-y divide-slate-300">
+        <thead class="bg-slate-100 text-slate-800 font-bold uppercase text-[10px]">
+          <tr>
+            <th class="p-2 border-r border-slate-300">#</th>
+            {{#if (or (eq report_type 'daily_visitor_log') (eq report_type 'completed_denied') (eq report_type 'visitor_date_range') (eq report_type 'currently_checked_in') (eq report_type 'uncompleted_checkouts'))}}
+            <th class="p-2 border-r border-slate-300">Reference No</th>
+            <th class="p-2 border-r border-slate-300">Visitor Full Name &amp; ID</th>
+            <th class="p-2 border-r border-slate-300">Inmate Visited</th>
+            <th class="p-2 border-r border-slate-300">Cell Unit</th>
+            <th class="p-2 border-r border-slate-300">Date</th>
+            <th class="p-2 border-r border-slate-300">Time In / Out</th>
+            <th class="p-2">Status</th>
+            {{/if}}
+
+            {{#if (eq report_type 'cell_assignment_summary')}}
+            <th class="p-2 border-r border-slate-300">Cell</th>
+            <th class="p-2 border-r border-slate-300">Block</th>
+            <th class="p-2 border-r border-slate-300">Capacity</th>
+            <th class="p-2 border-r border-slate-300">Occupancy</th>
+            <th class="p-2 border-r border-slate-300">Rate</th>
+            <th class="p-2">Status</th>
+            {{/if}}
+
+            {{#if (or (eq report_type 'headcount_records') (eq report_type 'headcount_discrepancies'))}}
+            <th class="p-2 border-r border-slate-300">Date</th>
+            <th class="p-2 border-r border-slate-300">Shift</th>
+            <th class="p-2 border-r border-slate-300">Expected</th>
+            <th class="p-2 border-r border-slate-300">Verified</th>
+            <th class="p-2 border-r border-slate-300">Difference</th>
+            <th class="p-2 border-r border-slate-300">Status</th>
+            <th class="p-2">Remarks</th>
+            {{/if}}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {{#if reportData.length}}
+            {{#each reportData}}
+            <tr class="even:bg-slate-50">
+              <td class="p-2 border-r border-slate-200 text-slate-500 font-mono">{{add @index 1}}</td>
+              
+              {{#if (or (eq ../report_type 'daily_visitor_log') (eq ../report_type 'completed_denied') (eq ../report_type 'visitor_date_range') (eq ../report_type 'currently_checked_in') (eq ../report_type 'uncompleted_checkouts'))}}
+              <td class="p-2 border-r border-slate-200 font-mono font-bold">{{ this.reference_no }}</td>
+              <td class="p-2 border-r border-slate-200">
+                <strong>{{ this.visitor.full_name }}</strong> ({{ this.visitor.id_type }}: {{ this.visitor.id_number }})
+              </td>
+              <td class="p-2 border-r border-slate-200">{{ this.inmate.last_name }}, {{ this.inmate.first_name }} ({{ this.inmate.inmate_number }})</td>
+              <td class="p-2 border-r border-slate-200">{{#if this.inmate.cell}}{{ this.inmate.cell.cell_number }}{{else}}Unassigned{{/if}}</td>
+              <td class="p-2 border-r border-slate-200 whitespace-nowrap">{{ this.visit_date }}</td>
+              <td class="p-2 border-r border-slate-200 whitespace-nowrap">{{ this.time_in }} - {{#if this.time_out}}{{ this.time_out }}{{else}}Active{{/if}}</td>
+              <td class="p-2 font-bold">{{ this.status }}</td>
+              {{/if}}
+
+              {{#if (eq ../report_type 'cell_assignment_summary')}}
+              <td class="p-2 border-r border-slate-200 font-bold">{{ this.cell_number }}</td>
+              <td class="p-2 border-r border-slate-200">{{ this.block }}</td>
+              <td class="p-2 border-r border-slate-200 font-bold">{{ this.capacity }}</td>
+              <td class="p-2 border-r border-slate-200 font-bold">{{ this.occupancy }}</td>
+              <td class="p-2 border-r border-slate-200">{{ this.percentage }}%</td>
+              <td class="p-2 font-bold">{{ this.status }}</td>
+              {{/if}}
+
+              {{#if (or (eq ../report_type 'headcount_records') (eq ../report_type 'headcount_discrepancies'))}}
+              <td class="p-2 border-r border-slate-200 font-bold">{{ this.date }}</td>
+              <td class="p-2 border-r border-slate-200">{{ this.shift }}</td>
+              <td class="p-2 border-r border-slate-200 font-bold">{{ this.expected_count }}</td>
+              <td class="p-2 border-r border-slate-200 font-bold">{{#if (neq this.verified_count null)}}{{ this.verified_count }}{{else}}Pending{{/if}}</td>
+              <td class="p-2 border-r border-slate-200 font-mono font-bold">{{ this.difference }}</td>
+              <td class="p-2 border-r border-slate-200 font-bold">{{ this.status }}</td>
+              <td class="p-2">{{ this.remarks }}</td>
+              {{/if}}
+            </tr>
+            {{/each}}
+          {{else}}
+            <tr>
+              <td colspan="8" class="p-6 text-center text-slate-400">No records found.</td>
+            </tr>
+          {{/if}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Signatory Certification Block -->
+    <div class="pt-6 border-t-2 border-slate-900 grid grid-cols-3 gap-6 text-center text-xs">
+      <div>
+        <div class="h-12 flex items-end justify-center font-bold text-slate-900">
+          {{ currentUser.name }}
+        </div>
+        <div class="border-t border-slate-400 pt-1 text-[10px] font-semibold text-slate-700">
+          Prepared by: Gate Processing Officer
+        </div>
+      </div>
+
+      <div>
+        <div class="h-12 flex items-end justify-center font-bold text-slate-900">
+          SJO4 Roberto V. Mendoza
+        </div>
+        <div class="border-t border-slate-400 pt-1 text-[10px] font-semibold text-slate-700">
+          Verified by: Custodial Shift Supervisor
+        </div>
+      </div>
+
+      <div>
+        <div class="h-12 flex items-end justify-center font-bold text-slate-900">
+          JCInsp Carlos M. Santos
+        </div>
+        <div class="border-t border-slate-400 pt-1 text-[10px] font-semibold text-slate-700">
+          Approved by: Jail Warden / Superintendent
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Notice -->
+    <div class="mt-8 pt-3 border-t border-slate-200 text-center text-[9px] text-slate-400">
+      CONFIDENTIAL &bull; Bureau of Jail Management and Penology &bull; Official Custodial Record Copy
+    </div>
+
+  </div>
+
+</body>
+</html>
+

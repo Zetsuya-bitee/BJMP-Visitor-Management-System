@@ -1,0 +1,387 @@
+{{> head}}
+{{> navbar}}
+
+<div class="flex flex-1">
+  {{> sidebar}}
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    {{> alerts}}
+
+    <!-- Top Action Bar -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="fa-solid fa-dungeon text-indigo-600"></i>
+          Inmate Cell Assignment Monitoring
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Official custody housing records &bull; Cell occupancy monitoring &amp; authorized inmate transfers
+        </p>
+      </div>
+
+      {{#if isSupervisor}}
+      <div>
+        <button onclick="openNewTransferModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors">
+          <i class="fa-solid fa-arrows-split-up-and-left"></i>
+          <span>Authorized Cell Transfer</span>
+        </button>
+      </div>
+      {{else}}
+      <div class="text-xs bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 flex items-center gap-2">
+        <i class="fa-solid fa-eye text-slate-500"></i>
+        <span>Gate Officer View Mode (Custody modifications restricted to Supervisors)</span>
+      </div>
+      {{/if}}
+    </div>
+
+    <!-- Cell Occupancy Overview Grid -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600">
+          Housing Unit &amp; Cell Occupancy Status
+        </h3>
+        <span class="text-xs text-slate-500 font-medium">{{ cells.length }} Active Cell Units</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {{#each cells}}
+        <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex flex-col justify-between hover:border-indigo-300 transition-colors">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-slate-900">{{ this.cell_number }}</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase {{#if this.isFull}}bg-red-100 text-red-800{{else}}bg-emerald-100 text-emerald-800{{/if}}">
+                {{#if this.isFull}}Full{{else}}Open{{/if}}
+              </span>
+            </div>
+            <div class="text-[10px] text-slate-500 truncate mt-0.5" title="{{ this.block }}">
+              {{ this.block }}
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-600 mb-1">
+              <span>{{ this.occupancy }}/{{ this.capacity }}</span>
+              <span class="{{#if (gte this.percentage 90)}}text-red-600{{else}}text-slate-700{{/if}}">{{ this.percentage }}%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+              <div class="h-1.5 rounded-full {{#if (gte this.percentage 90)}}bg-red-500{{else if (gte this.percentage 70)}}bg-amber-500{{else}}bg-indigo-500{{/if}}" style="width: {{ this.percentage }}%"></div>
+            </div>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+      <form method="GET" action="/cells" class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        
+        <!-- Keyword Search -->
+        <div class="sm:col-span-2">
+          <label for="search" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+            Search Inmate Identifier / Name / Case #
+          </label>
+          <div class="relative">
+            <input type="text" id="search" name="search" value="{{ filters.search }}" placeholder="e.g. INM-2024-0101 or Dela Cruz"
+              class="w-full text-xs pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+              <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cell Block Filter -->
+        <div>
+          <label for="block" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Cell Block</label>
+          <select id="block" name="block" class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">All Blocks</option>
+            {{#each uniqueBlocks}}
+            <option value="{{ this }}" {{#if (eq ../filters.block this)}}selected{{/if}}>{{ this }}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <!-- Filter Action -->
+        <div class="flex items-end space-x-2">
+          <button type="submit" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm">
+            Filter Inmates
+          </button>
+          <a href="/cells" class="px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50">
+            Reset
+          </a>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Inmate Cell Assignment Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-500">
+        <span>Active Inmate Population in Custody: <strong class="text-slate-800">{{ inmates.length }}</strong> Inmates</span>
+        <span class="text-slate-400">Official Source of Truth</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider font-semibold">
+            <tr>
+              <th scope="col" class="py-3 px-4">Inmate ID</th>
+              <th scope="col" class="py-3 px-4">Full Legal Name</th>
+              <th scope="col" class="py-3 px-4">Current Cell &amp; Block</th>
+              <th scope="col" class="py-3 px-4">Security Level</th>
+              <th scope="col" class="py-3 px-4">Admission Date</th>
+              <th scope="col" class="py-3 px-4">Custody Status</th>
+              <th scope="col" class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-700">
+            {{#if inmates.length}}
+              {{#each inmates}}
+              <tr class="hover:bg-slate-50 transition-colors">
+                
+                <!-- Inmate ID -->
+                <td class="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
+                  {{ this.inmate_number }}
+                </td>
+
+                <!-- Name & Case -->
+                <td class="py-3 px-4">
+                  <div class="font-bold text-slate-900">{{ this.last_name }}, {{ this.first_name }} {{ this.middle_name }}</div>
+                  <div class="text-[10px] text-slate-400">Case: <span class="font-mono text-slate-600">{{ this.case_number }}</span></div>
+                </td>
+
+                <!-- Current Cell -->
+                <td class="py-3 px-4">
+                  {{#if this.cell}}
+                  <div class="font-bold text-indigo-950 flex items-center gap-1.5">
+                    <i class="fa-solid fa-door-closed text-indigo-500"></i>
+                    <span>{{ this.cell.cell_number }}</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500">{{ this.cell.block }}</div>
+                  {{else}}
+                  <span class="text-amber-600 font-semibold italic">Unassigned</span>
+                  {{/if}}
+                </td>
+
+                <!-- Security Level -->
+                <td class="py-3 px-4">
+                  <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold {{#if (eq this.security_level 'Maximum')}}bg-red-100 text-red-800{{else if (eq this.security_level 'Medium')}}bg-amber-100 text-amber-800{{else}}bg-sky-100 text-sky-800{{/if}}">
+                    {{ this.security_level }}
+                  </span>
+                </td>
+
+                <!-- Admission Date -->
+                <td class="py-3 px-4 whitespace-nowrap text-slate-600">
+                  {{ this.date_admitted }}
+                </td>
+
+                <!-- Status -->
+                <td class="py-3 px-4 whitespace-nowrap">
+                  {{statusBadge this.status}}
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
+                  
+                  <!-- View Transfer History Button -->
+                  <button type="button" onclick="viewInmateHistory('{{ this.id }}', '{{ this.inmate_number }}', '{{ this.last_name }}, {{ this.first_name }}')"
+                    class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded font-semibold text-[11px]" title="View Cell History">
+                    <i class="fa-solid fa-clock-rotate-left"></i> History
+                  </button>
+
+                  <!-- Transfer Button (Supervisor/Admin only) -->
+                  {{#if ../isSupervisor}}
+                  <button type="button" onclick="openTransferModalForInmate('{{ this.id }}', '{{ this.inmate_number }}', '{{ this.last_name }}, {{ this.first_name }}', '{{#if this.cell}}{{ this.cell.cell_number }}{{else}}Unassigned{{/if}}')"
+                    class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-bold text-[11px] shadow-sm">
+                    <i class="fa-solid fa-arrows-split-up-and-left"></i> Transfer
+                  </button>
+                  {{/if}}
+
+                </td>
+
+              </tr>
+              {{/each}}
+            {{else}}
+              <tr>
+                <td colspan="7" class="py-12 text-center text-slate-400 text-xs">
+                  <i class="fa-solid fa-user-slash text-3xl mb-2 text-slate-300"></i>
+                  <p>No inmates found matching query.</p>
+                </td>
+              </tr>
+            {{/if}}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- 1. Transfer Cell Modal (Supervisor/Admin Only) -->
+<div id="transfer-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+    <div class="bg-indigo-700 text-white p-4 flex items-center justify-between">
+      <h3 class="text-sm font-bold flex items-center gap-2">
+        <i class="fa-solid fa-arrows-split-up-and-left"></i>
+        Authorized Cell Transfer Order
+      </h3>
+      <button onclick="closeTransferModal()" class="text-indigo-200 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form action="/cells/transfer" method="POST">
+      <input type="hidden" id="modal-inmate-id" name="inmate_id">
+
+      <div class="p-5 text-xs space-y-3">
+        
+        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+          <div class="text-[10px] uppercase font-bold text-indigo-700">Inmate for Custody Transfer</div>
+          <div id="modal-inmate-name" class="font-bold text-slate-900 text-sm mt-0.5"></div>
+          <div class="text-[11px] text-slate-600 mt-0.5">
+            Current Cell: <strong id="modal-current-cell" class="text-slate-900"></strong>
+          </div>
+        </div>
+
+        <div>
+          <label for="to_cell_id" class="block font-bold text-slate-700 mb-1">
+            Target Destination Cell <span class="text-red-500">*</span>
+          </label>
+          <select id="to_cell_id" name="to_cell_id" required class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">-- Select Destination Cell --</option>
+            {{#each cells}}
+            <option value="{{ this.id }}" {{#if this.isFull}}disabled{{/if}}>
+              {{ this.cell_number }} - {{ this.block }} (Occupancy: {{ this.occupancy }}/{{ this.capacity }}{{#if this.isFull}} - FULL{{/if}})
+            </option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div>
+          <label for="transfer_reason" class="block font-bold text-slate-700 mb-1">
+            Authorized Transfer Reason <span class="text-red-500">* Mandatory</span>
+          </label>
+          <textarea id="transfer_reason" name="transfer_reason" rows="2" required
+            placeholder="e.g. Security re-classification / cell de-congestion / medical quarantine transfer"
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+
+        <div>
+          <label for="transfer_remarks" class="block font-bold text-slate-700 mb-1">Supervisory Remarks</label>
+          <input type="text" id="transfer_remarks" name="remarks" placeholder="Optional remarks..."
+            class="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
+        <button type="button" onclick="closeTransferModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">
+          Cancel
+        </button>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm">
+          Execute Transfer Order
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 2. Cell Assignment History Modal -->
+<div id="history-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden">
+    <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+      <h3 class="text-sm font-bold flex items-center gap-2">
+        <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+        Inmate Cell Assignment History
+      </h3>
+      <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="p-5">
+      <div class="mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <div id="history-inmate-name" class="font-bold text-slate-900 text-sm"></div>
+          <div id="history-inmate-number" class="text-xs text-slate-500 font-mono"></div>
+        </div>
+        <span class="text-[11px] text-slate-400">Permanent Custody Audit Trail</span>
+      </div>
+
+      <div id="history-timeline" class="space-y-3 max-h-80 overflow-y-auto pr-1 text-xs">
+        <div class="text-center py-6 text-slate-400">Loading history...</div>
+      </div>
+    </div>
+
+    <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+      <button type="button" onclick="closeHistoryModal()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-semibold">
+        Close History
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openTransferModalForInmate(id, number, name, cell) {
+    document.getElementById('modal-inmate-id').value = id;
+    document.getElementById('modal-inmate-name').textContent = `${name} (${number})`;
+    document.getElementById('modal-current-cell').textContent = cell;
+    document.getElementById('transfer_reason').value = '';
+    document.getElementById('transfer_remarks').value = '';
+    document.getElementById('transfer-modal').classList.remove('hidden');
+  }
+
+  function closeTransferModal() {
+    document.getElementById('transfer-modal').classList.add('hidden');
+  }
+
+  async function viewInmateHistory(inmateId, number, name) {
+    document.getElementById('history-inmate-name').textContent = name;
+    document.getElementById('history-inmate-number').textContent = 'Inmate ID: ' + number;
+    const timeline = document.getElementById('history-timeline');
+    timeline.innerHTML = '<div class="text-center py-6 text-slate-400">Loading assignment records...</div>';
+    document.getElementById('history-modal').classList.remove('hidden');
+
+    try {
+      const res = await fetch(`/cells/inmate/${inmateId}/history`);
+      const data = await res.json();
+
+      if (!data || data.length === 0) {
+        timeline.innerHTML = '<div class="text-center py-6 text-slate-400">No cell transfers recorded yet.</div>';
+        return;
+      }
+
+      timeline.innerHTML = data.map(h => `
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-bold text-slate-900">
+              ${h.fromCell ? h.fromCell.cell_number : 'Initial Admission'} &rarr; ${h.toCell ? h.toCell.cell_number : 'N/A'}
+            </span>
+            <span class="text-[10px] px-2 py-0.5 rounded font-bold ${h.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}">
+              ${h.status}
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-600">
+            <span class="font-semibold">Reason:</span> ${h.transfer_reason}
+          </div>
+          <div class="mt-1 text-[10px] text-slate-400 flex items-center justify-between">
+            <span>Date: ${h.start_date} ${h.end_date ? 'to ' + h.end_date : '(Current)'}</span>
+            <span>Authorized by: <strong>${h.authorizedBy ? h.authorizedBy.name : 'Officer'}</strong></span>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      timeline.innerHTML = '<div class="text-center py-6 text-red-500">Failed to load assignment history.</div>';
+    }
+  }
+
+  function closeHistoryModal() {
+    document.getElementById('history-modal').classList.add('hidden');
+  }
+</script>
+
+{{> footer}}
+
